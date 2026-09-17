@@ -7,7 +7,7 @@ import type {
   TimelineSortOrder,
   ReminisceTabId
 } from '../../types/reminisce';
-import { ALL_MOOD_EMOJIS } from '../../types/reminisce';
+import { FIVE_MOODS } from '../../types/reminisce';
 import {
   subscribeMemories,
   subscribePeople,
@@ -40,8 +40,18 @@ import {
   X,
   CheckCircle2,
   AlertTriangle,
-  Plus
+  Plus,
+  Calendar
 } from 'lucide-react';
+
+function deduplicateMemories(list: MemoryItem[]): MemoryItem[] {
+  const seen = new Set<string>();
+  return list.filter((item) => {
+    if (!item.id || seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
 
 export function ReminiscePage() {
   const { user } = useAuth();
@@ -102,7 +112,7 @@ export function ReminiscePage() {
   // Subscribe to memories and people
   useEffect(() => {
     const unsubMemories = subscribeMemories(userId, (data) => {
-      setMemories(data);
+      setMemories(deduplicateMemories(data));
     });
 
     const unsubPeople = subscribePeople(userId, (peopleData) => {
@@ -132,9 +142,29 @@ export function ReminiscePage() {
   const handleToggleFavorite = async (id: string, current: boolean) => {
     try {
       const res = await updateMemory(userId, id, { isFavorite: !current });
-      setMemories((prev) => prev.map((m) => (m.id === id ? res.memory : m)));
+      setMemories((prev) => deduplicateMemories(prev.map((m) => (m.id === id ? res.memory : m))));
     } catch (err) {
       console.warn('Favorite toggle warning:', err);
+    }
+  };
+
+  // Handle quick privacy toggling from cards
+  const handleTogglePrivate = async (id: string, current: boolean) => {
+    try {
+      const res = await updateMemory(userId, id, { isPrivate: !current });
+      setMemories((prev) => deduplicateMemories(prev.map((m) => (m.id === id ? res.memory : m))));
+    } catch (err) {
+      console.warn('Privacy toggle warning:', err);
+    }
+  };
+
+  // Handle quick pin toggling from cards
+  const handleTogglePin = async (id: string, current: boolean) => {
+    try {
+      const res = await updateMemory(userId, id, { isPinned: !current });
+      setMemories((prev) => deduplicateMemories(prev.map((m) => (m.id === id ? res.memory : m))));
+    } catch (err) {
+      console.warn('Pin toggle warning:', err);
     }
   };
 
@@ -154,37 +184,58 @@ export function ReminiscePage() {
   const handleSaveMemory = async (
     data: Omit<MemoryItem, 'id' | 'userId' | 'createdAt'>
   ) => {
-    if (editingMemory) {
-      const res = await updateMemory(userId, editingMemory.id, data);
-      setMemories((prev) => prev.map((m) => (m.id === editingMemory.id ? res.memory : m)));
+    try {
+      if (editingMemory) {
+        const res = await updateMemory(userId, editingMemory.id, data);
+        setMemories((prev) => prev.map((m) => (m.id === editingMemory.id ? res.memory : m)));
+        showToast(
+          'Memory updated successfully!',
+          res.firestoreSynced
+            ? 'Synchronized with Cloud Firestore.'
+            : res.firestoreNote,
+          'success'
+        );
+      } else {
+        const res = await addMemory(userId, data);
+        setMemories((prev) => [res.memory, ...prev.filter((m) => m.id !== res.memory.id)]);
+        showToast(
+          'Memory saved successfully!',
+          res.firestoreSynced
+            ? 'Synchronized with Cloud Firestore.'
+            : res.firestoreNote,
+          'success'
+        );
+      }
+    } catch (err: any) {
       showToast(
-        'Memory updated successfully!',
-        res.firestoreSynced
-          ? 'Synchronized with Cloud Firestore.'
-          : res.firestoreNote
+        'Failed to save memory',
+        err?.message || 'Firebase database operation failed.',
+        'error'
       );
-    } else {
-      const res = await addMemory(userId, data);
-      setMemories((prev) => [res.memory, ...prev.filter((m) => m.id !== res.memory.id)]);
-      showToast(
-        'Memory saved successfully!',
-        res.firestoreSynced
-          ? 'Synchronized with Cloud Firestore.'
-          : res.firestoreNote
-      );
+      throw err;
     }
   };
 
   // Delete
   const handleDeleteMemory = async (id: string) => {
-    const res = await deleteMemory(userId, id);
-    setMemories((prev) => prev.filter((m) => m.id !== id));
-    showToast(
-      'Memory deleted successfully.',
-      res.firestoreSynced
-        ? 'Removed from Cloud Firestore.'
-        : res.firestoreNote
-    );
+    try {
+      const res = await deleteMemory(userId, id);
+      setMemories((prev) => prev.filter((m) => m.id !== id));
+      showToast(
+        'Memory deleted successfully.',
+        res.firestoreSynced
+          ? 'Removed from Cloud Firestore.'
+          : res.firestoreNote,
+        'success'
+      );
+    } catch (err: any) {
+      showToast(
+        'Failed to delete memory',
+        err?.message || 'Firebase database operation failed.',
+        'error'
+      );
+      throw err;
+    }
   };
 
   // Add new person
@@ -591,7 +642,7 @@ export function ReminiscePage() {
             </div>
           </div>
 
-          {/* Custom Date Pickers */}
+          {/* Custom Date Pickers with Calendar Icons */}
           {showCustomDateInputs && (
             <div
               className="neu-inset"
@@ -606,6 +657,7 @@ export function ReminiscePage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calendar size={14} color="var(--gold-primary)" />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>From:</span>
                 <input
                   type="date"
@@ -616,6 +668,7 @@ export function ReminiscePage() {
                 />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calendar size={14} color="var(--gold-primary)" />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>To:</span>
                 <input
                   type="date"
@@ -658,8 +711,8 @@ export function ReminiscePage() {
               <Compass size={28} color="var(--gold-primary)" />
               <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', maxWidth: '420px' }}>
                 {memories.length === 0
-                  ? "Your memory vault is empty. Click the 'Add Memory' button to record your first memory."
-                  : 'No memories match your currently selected date filter.'}
+                  ? "Your memories will live here. Add your first one whenever you're ready."
+                  : 'No memories found for these dates.'}
               </p>
               {dateFilter !== 'all' && (
                 <button
@@ -681,6 +734,8 @@ export function ReminiscePage() {
                   isRevealed={revealedMemoryIds.has(memory.id)}
                   onToggleReveal={handleToggleReveal}
                   onToggleFavorite={handleToggleFavorite}
+                  onTogglePrivate={handleTogglePrivate}
+                  onTogglePin={handleTogglePin}
                   onEdit={handleEdit}
                 />
               ))}
@@ -771,7 +826,7 @@ export function ReminiscePage() {
             >
               <Heart size={28} color="var(--gold-primary)" />
               <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', maxWidth: '420px' }}>
-                No favorite memories marked yet. Tap the gold heart on any memory card to save it to your favorites.
+                No favorite memories yet. Tap the heart on any memory to keep it close.
               </p>
             </div>
           ) : (
@@ -783,6 +838,8 @@ export function ReminiscePage() {
                   isRevealed={revealedMemoryIds.has(memory.id)}
                   onToggleReveal={handleToggleReveal}
                   onToggleFavorite={handleToggleFavorite}
+                  onTogglePrivate={handleTogglePrivate}
+                  onTogglePin={handleTogglePin}
                   onEdit={handleEdit}
                 />
               ))}
@@ -858,6 +915,8 @@ export function ReminiscePage() {
                   isRevealed={revealedMemoryIds.has(memory.id)}
                   onToggleReveal={handleToggleReveal}
                   onToggleFavorite={handleToggleFavorite}
+                  onTogglePrivate={handleTogglePrivate}
+                  onTogglePin={handleTogglePin}
                   onEdit={handleEdit}
                 />
               ))}
@@ -1029,11 +1088,13 @@ export function ReminiscePage() {
             <div className="reminisce-cards-grid">
               {timelineTabMemories.map((memory) => (
                 <MemoryCard
-                  key={memory.id}
+                  key={`timeline-${memory.id}`}
                   memory={memory}
                   isRevealed={revealedMemoryIds.has(memory.id)}
                   onToggleReveal={handleToggleReveal}
                   onToggleFavorite={handleToggleFavorite}
+                  onTogglePrivate={handleTogglePrivate}
+                  onTogglePin={handleTogglePin}
                   onEdit={handleEdit}
                 />
               ))}
@@ -1079,7 +1140,7 @@ export function ReminiscePage() {
             )}
           </div>
 
-          {/* Apple iOS Style Mood Emoji Selection Area (NO category names, NO counts, emoji characters only) */}
+          {/* Apple iOS Style Mood Selection: ONLY 5 moods with name underneath, NO counts */}
           <div
             className="neu-inset"
             style={{
@@ -1088,49 +1149,58 @@ export function ReminiscePage() {
               marginBottom: '1.75rem',
               display: 'flex',
               flexWrap: 'wrap',
-              gap: '0.75rem',
+              gap: '1rem',
               alignItems: 'center',
               justifyContent: 'center'
             }}
           >
-            {ALL_MOOD_EMOJIS.map((emojiChar) => {
-              const isSelected = selectedMood === emojiChar;
+            {FIVE_MOODS.map((m) => {
+              const isSelected = selectedMood === m.emoji;
               return (
                 <button
-                  key={emojiChar}
-                  id={`mood-btn-${emojiChar}`}
+                  key={m.name}
+                  id={`mood-btn-${m.name.toLowerCase()}`}
                   type="button"
-                  onClick={() => setSelectedMood(isSelected ? null : emojiChar)}
+                  onClick={() => setSelectedMood(isSelected ? null : m.emoji)}
                   className={isSelected ? 'neu-btn-gold' : 'neu-btn'}
                   style={{
-                    width: '52px',
-                    height: '52px',
-                    padding: 0,
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: '1.75rem',
+                    minWidth: '68px',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: 'var(--radius-sm)',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    gap: '0.35rem',
                     fontFamily:
                       '-apple-system, BlinkMacSystemFont, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
                     border: isSelected
-                      ? '2.5px solid var(--border-gold-strong)'
+                      ? '2px solid var(--border-gold-strong)'
                       : '1px solid var(--border-subtle)',
                     boxShadow: isSelected
-                      ? 'var(--neu-shadow-recessed-sm), 0 0 16px rgba(212, 175, 55, 0.5)'
+                      ? 'var(--neu-shadow-recessed-sm), 0 0 16px rgba(212, 175, 55, 0.4)'
                       : 'var(--neu-shadow-raised-sm)',
-                    transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+                    transform: isSelected ? 'scale(1.08)' : 'scale(1)',
                     transition: 'all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)'
                   }}
-                  aria-label={`Filter by mood ${emojiChar}`}
+                  aria-label={`Filter by mood ${m.name}`}
                 >
-                  <span>{emojiChar}</span>
+                  <span style={{ fontSize: '1.75rem', lineHeight: 1 }}>{m.emoji}</span>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: isSelected ? 'var(--liquid-gold-text)' : 'var(--text-secondary)'
+                    }}
+                  >
+                    {m.name}
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Filter Status Indicator */}
+          {/* Filter Status Indicator (No counts) */}
           <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {selectedMood ? (
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
@@ -1143,12 +1213,11 @@ export function ReminiscePage() {
                   }}
                 >
                   {selectedMood}
-                </span>{' '}
-                ({moodTabMemories.length} found)
+                </span>
               </p>
             ) : (
               <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                Tap any emoji above to filter memories by mood, or browse all memories below:
+                Select any mood above to view memories:
               </p>
             )}
           </div>
@@ -1169,7 +1238,7 @@ export function ReminiscePage() {
             >
               <Smile size={28} color="var(--gold-primary)" />
               <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
-                No memories recorded with the mood {selectedMood}.
+                No memories with this mood yet.
               </p>
               <button
                 type="button"
@@ -1189,6 +1258,8 @@ export function ReminiscePage() {
                   isRevealed={revealedMemoryIds.has(memory.id)}
                   onToggleReveal={handleToggleReveal}
                   onToggleFavorite={handleToggleFavorite}
+                  onTogglePrivate={handleTogglePrivate}
+                  onTogglePin={handleTogglePin}
                   onEdit={handleEdit}
                 />
               ))}
@@ -1353,13 +1424,12 @@ export function ReminiscePage() {
             )}
           </div>
 
-          {/* Filter Status Indicator */}
+          {/* Filter Status Indicator (No counts) */}
           <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {selectedPerson ? (
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 Showing memories connected with{' '}
-                <strong style={{ color: 'var(--text-gold)' }}>{selectedPerson}</strong>{' '}
-                ({peopleTabMemories.length} found)
+                <strong style={{ color: 'var(--text-gold)' }}>{selectedPerson}</strong>
               </p>
             ) : (
               <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
@@ -1384,7 +1454,7 @@ export function ReminiscePage() {
             >
               <Users size={28} color="var(--gold-primary)" />
               <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
-                No memories found connected with {selectedPerson}.
+                No memories with this person yet.
               </p>
               <button
                 type="button"
@@ -1392,7 +1462,7 @@ export function ReminiscePage() {
                 className="neu-btn"
                 style={{ padding: '0.45rem 1rem', fontSize: '0.8125rem' }}
               >
-                Clear person filter
+                Show all people
               </button>
             </div>
           ) : (
@@ -1404,6 +1474,8 @@ export function ReminiscePage() {
                   isRevealed={revealedMemoryIds.has(memory.id)}
                   onToggleReveal={handleToggleReveal}
                   onToggleFavorite={handleToggleFavorite}
+                  onTogglePrivate={handleTogglePrivate}
+                  onTogglePin={handleTogglePin}
                   onEdit={handleEdit}
                 />
               ))}

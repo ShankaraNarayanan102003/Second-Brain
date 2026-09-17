@@ -3,7 +3,7 @@ import { SUBPAGES, TODO_SECTIONS } from '../../data/navigation';
 import type { SubpageId, TodoSectionId } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { IconRenderer } from '../ui/IconRenderer';
-import { Menu, X, ChevronRight, ShieldCheck, LogOut, Mail, User } from 'lucide-react';
+import { Menu, X, ChevronRight, LogOut, Mail, User } from 'lucide-react';
 
 interface MobileNavProps {
   activeSubpage: SubpageId;
@@ -391,19 +391,20 @@ export function MobileNav({
             WebkitBackdropFilter: 'blur(6px)',
             zIndex: 90,
             display: 'flex',
-            justifyContent: 'flex-end'
+            justifyContent: 'flex-start'
           }}
         >
           <div
             id="mobile-drawer-content"
+            className="mobile-drawer-left"
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '84%',
               maxWidth: '320px',
               height: '100%',
               backgroundColor: 'var(--surface-base)',
-              borderLeft: '1px solid var(--border-gold-subtle)',
-              boxShadow: '-10px 0 30px rgba(0, 0, 0, 0.8)',
+              borderRight: '1px solid var(--border-gold-subtle)',
+              boxShadow: '10px 0 30px rgba(0, 0, 0, 0.8)',
               padding: 'max(calc(1.5rem + env(safe-area-inset-top, 0px)), 2.5rem) 1.25rem 1.5rem 1.25rem',
               display: 'flex',
               flexDirection: 'column',
@@ -509,25 +510,6 @@ export function MobileNav({
                   </div>
                 );
               })}
-            </div>
-
-            <div
-              className="neu-inset"
-              style={{
-                padding: '0.75rem',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                marginTop: 'auto',
-                fontSize: '0.6875rem'
-              }}
-            >
-              <ShieldCheck size={16} color="var(--gold-primary)" />
-              <div>
-                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Firebase Active</span>
-                <div style={{ color: 'var(--text-muted)' }}>shan-second-brain</div>
-              </div>
             </div>
           </div>
         </div>

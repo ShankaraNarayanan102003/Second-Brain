@@ -14,6 +14,45 @@ export function formatMemoryDate(dateStr: string): string {
 }
 
 /**
+ * Extracts distinct month abbreviation (e.g. SEP), day (e.g. 17), and year (e.g. 2026)
+ * for the left date rail of the compact memory card.
+ */
+export function parseMemoryDateParts(dateStr: string): { month: string; day: string; year: string } {
+  if (!dateStr) {
+    const now = new Date();
+    return {
+      month: now.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+      day: String(now.getDate()),
+      year: String(now.getFullYear())
+    };
+  }
+
+  // Check for standard YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
+  const cleanDate = dateStr.split('T')[0];
+  const parts = cleanDate.split('-').map(Number);
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    const [year, month, day] = parts;
+    const d = new Date(year, month - 1, day);
+    return {
+      month: d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+      day: String(day),
+      year: String(year)
+    };
+  }
+
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) {
+    return {
+      month: parsed.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+      day: String(parsed.getDate()),
+      year: String(parsed.getFullYear())
+    };
+  }
+
+  return { month: 'MEM', day: '--', year: '----' };
+}
+
+/**
  * Formats time string (HH:mm) to 12-hour format e.g. "3:45 PM"
  */
 export function formatMemoryTime(timeStr?: string): string {

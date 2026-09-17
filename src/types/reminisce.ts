@@ -20,35 +20,20 @@ export interface PersonItem {
   createdAt: number;
 }
 
-export interface MoodCategory {
-  label: string;
-  emojis: string[];
+export interface MoodDefinition {
+  name: string;
+  emoji: string;
 }
 
-export const MOOD_CATEGORIES: MoodCategory[] = [
-  {
-    label: 'Happy / Joyful',
-    emojis: ['😀', '😄', '🥰']
-  },
-  {
-    label: 'Sad / Down',
-    emojis: ['😢', '😔', '😞']
-  },
-  {
-    label: 'Angry / Frustrated',
-    emojis: ['😤', '😡']
-  },
-  {
-    label: 'Tired / Sleepy',
-    emojis: ['😴', '🥱', '😪']
-  },
-  {
-    label: 'Confused / Neutral',
-    emojis: ['😕', '😐', '🙄']
-  }
+export const FIVE_MOODS: MoodDefinition[] = [
+  { name: 'Happy', emoji: '🥰' },
+  { name: 'Sad', emoji: '😢' },
+  { name: 'Anger', emoji: '😤' },
+  { name: 'Love', emoji: '💜' },
+  { name: 'Surprise', emoji: '🤯' }
 ];
 
-export const ALL_MOOD_EMOJIS = MOOD_CATEGORIES.flatMap((c) => c.emojis);
+export const ALL_MOOD_EMOJIS = FIVE_MOODS.map((m) => m.emoji);
 
 export type DateFilterType = 'all' | 'today' | 'week' | 'month' | 'year' | 'custom';
 export type TimelineSortOrder = 'newest' | 'oldest';

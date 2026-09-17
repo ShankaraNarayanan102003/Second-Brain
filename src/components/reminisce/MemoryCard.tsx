@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import type { MemoryItem } from '../../types/reminisce';
 import {
-  formatMemoryDate,
   formatMemoryTime,
-  getElapsedTimeDisplay
+  parseMemoryDateParts
 } from '../../utils/reminisceUtils';
 import {
   Heart,
@@ -12,10 +11,7 @@ import {
   Eye,
   EyeOff,
   Edit3,
-  Calendar,
-  Clock,
-  User,
-  Sparkles
+  User
 } from 'lucide-react';
 
 export interface MemoryCardProps {
@@ -24,382 +20,441 @@ export interface MemoryCardProps {
   isRevealed: boolean;
   onToggleReveal: (id: string) => void;
   onToggleFavorite: (id: string, current: boolean) => void;
+  onTogglePrivate: (id: string, current: boolean) => void;
+  onTogglePin: (id: string, current: boolean) => void;
   onEdit: (memory: MemoryItem) => void;
 }
 
+/**
+ * COMPACT CARD — VARIATION 1: DATE RAIL ON THE LEFT
+ * 
+ * Layout:
+ * ┌─────────────────────────────────────────────────┐
+ * │  DATE RAIL  │  MOOD + TIME          PINNED      │
+ * │             │                                  │
+ * │             │  MEMORY TITLE                    │
+ * │             │  Memory content                  │
+ * │             │                                  │
+ * │             │  PEOPLE                           │
+ * │             │                                  │
+ * │             │  LIKE  PRIVATE  PIN  EDIT         │
+ * └─────────────────────────────────────────────────┘
+ */
 export function MemoryCard({
   memory,
   isRevealed,
   onToggleReveal,
   onToggleFavorite,
+  onTogglePrivate,
+  onTogglePin,
   onEdit
 }: MemoryCardProps) {
-  const [favoriteHover, setFavoriteHover] = useState(false);
-  const elapsedTime = getElapsedTimeDisplay(memory.memoryDate, memory.createdAt);
+  const [isExpanded, setIsExpanded] = useState(false);
   const isPrivateHidden = memory.isPrivate && !isRevealed;
+  const { month, day, year } = parseMemoryDateParts(memory.memoryDate);
+
+  // Formatted 12-hour memory time (e.g. "2:24 AM")
+  const formattedTime = memory.memoryTime ? formatMemoryTime(memory.memoryTime) : '';
+
+  // People association logic
+  const peopleList = memory.people || [];
+  const maxDisplayPeople = 2;
+  const visiblePeople = peopleList.slice(0, maxDisplayPeople);
+  const remainingPeopleCount = peopleList.length - maxDisplayPeople;
+
+  // Content preview and truncation
+  const contentText = memory.notes || '';
+  const isLongContent = contentText.length > 150;
+  const displayContent = isLongContent && !isExpanded
+    ? contentText.slice(0, 150).trim() + '...'
+    : contentText;
 
   return (
     <article
       id={`memory-card-${memory.id}`}
-      className="neu-card reminisce-memory-article"
-      style={{
-        border: memory.isPinned
-          ? '1.5px solid var(--border-gold-strong)'
-          : 'var(--surface-card-border)'
-      }}
+      className={`neu-card reminisce-compact-card ${memory.isPinned ? 'is-pinned' : ''}`}
     >
-      {/* Top Meta Bar: Badges, Mood, and Quick Actions */}
+      {/* 2. DATE RAIL — LEFT SIDE */}
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.5rem',
-          flexWrap: 'wrap',
-          width: '100%'
-        }}
+        className="reminisce-date-rail"
+        aria-label={`Date: ${month} ${day}, ${year}`}
       >
+        <span className="reminisce-date-rail-month">{month}</span>
+        <span className="reminisce-date-rail-day">{day}</span>
+        <span className="reminisce-date-rail-year">{year}</span>
+      </div>
+
+      {/* MAIN CONTENT AREA — RIGHT SIDE */}
+      <div className="reminisce-card-main">
+        {/* 3. TOP METADATA ROW: MOOD + TIME, PINNED BADGE */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.45rem',
-            flexWrap: 'wrap',
-            flex: '1 1 auto',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+            width: '100%',
             minWidth: 0
           }}
         >
-          {/* Mood Emoji */}
-          <div
-            className="neu-inset"
-            style={{
-              width: '38px',
-              height: '38px',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.35rem',
-              borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border-gold-subtle)',
-              fontFamily:
-                '-apple-system, BlinkMacSystemFont, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif'
-            }}
-            title="Recorded Mood"
-          >
-            {memory.mood}
-          </div>
-
-          {/* Date & Time */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 }}>
+          {/* Left: Mood Emoji + Memory Time */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
+            {/* Mood Emoji Container: Small rounded square */}
             <div
+              className="neu-inset"
               style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: 'var(--radius-sm)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.35rem',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                whiteSpace: 'nowrap'
+                justifyContent: 'center',
+                fontSize: '1.125rem',
+                flexShrink: 0,
+                border: '1px solid var(--border-gold-subtle)',
+                fontFamily:
+                  '-apple-system, BlinkMacSystemFont, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif'
               }}
+              title={`Mood: ${memory.mood}`}
+              aria-label={`Mood: ${memory.mood}`}
             >
-              <Calendar size={13} color="var(--gold-primary)" />
-              <span>{formatMemoryDate(memory.memoryDate)}</span>
+              <span>{memory.mood}</span>
             </div>
 
-            {memory.memoryTime && (
-              <div
+            {/* Memory Time */}
+            {formattedTime && (
+              <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  fontSize: '0.75rem',
-                  color: 'var(--text-muted)',
+                  fontSize: '0.8125rem',
+                  fontWeight: 500,
+                  color: 'var(--text-secondary)',
                   whiteSpace: 'nowrap'
                 }}
               >
-                <Clock size={12} />
-                <span>{formatMemoryTime(memory.memoryTime)}</span>
-              </div>
+                {formattedTime}
+              </span>
             )}
           </div>
 
-          {/* Pinned Badge */}
-          {memory.isPinned && (
-            <span
-              className="neu-inset"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                padding: '0.2rem 0.55rem',
-                borderRadius: 'var(--radius-pill)',
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                color: 'var(--text-gold)',
-                letterSpacing: '0.04em',
-                flexShrink: 0
-              }}
-            >
-              <Pin size={11} /> PINNED
-            </span>
-          )}
+          {/* Right: Badges (Private indicator + Pinned floating badge) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+            {memory.isPrivate && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  padding: '0.18rem 0.5rem',
+                  borderRadius: 'var(--radius-pill)',
+                  fontSize: '0.6875rem',
+                  fontWeight: 600,
+                  color: 'var(--text-muted)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border-subtle)',
+                  letterSpacing: '0.04em'
+                }}
+                title="Confidential memory"
+              >
+                <Lock size={10} /> PRIVATE
+              </span>
+            )}
 
-          {/* Privacy Badge */}
-          {memory.isPrivate && (
-            <span
-              className="neu-inset"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                padding: '0.2rem 0.55rem',
-                borderRadius: 'var(--radius-pill)',
-                fontSize: '0.6875rem',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                letterSpacing: '0.04em',
-                flexShrink: 0
-              }}
-            >
-              <Lock size={11} /> PRIVATE
-            </span>
-          )}
+            {/* Pinned Badge (Hidden if not pinned) */}
+            {memory.isPinned && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  padding: '0.18rem 0.55rem',
+                  borderRadius: 'var(--radius-pill)',
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  color: 'var(--text-gold)',
+                  backgroundColor: 'rgba(212, 175, 55, 0.14)',
+                  border: '1px solid var(--border-gold-subtle)',
+                  letterSpacing: '0.04em'
+                }}
+                title="Pinned memory"
+              >
+                <Pin size={10} color="var(--gold-primary)" /> PINNED
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Right Actions: Favorite & Edit Icon Entry Point */}
+        {/* 4. MEMORY TITLE */}
+        <h3
+          style={{
+            fontSize: '1.0625rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            lineHeight: 1.38,
+            wordBreak: 'break-word',
+            overflowWrap: 'anywhere',
+            margin: 0
+          }}
+        >
+          {memory.title}
+        </h3>
+
+        {/* 5. MEMORY CONTENT */}
+        {isPrivateHidden ? (
+          <div
+            className="neu-inset"
+            style={{
+              padding: '0.75rem 1rem',
+              borderRadius: 'var(--radius-sm)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+              backgroundColor: 'var(--surface-control)',
+              border: '1px dashed var(--border-gold-subtle)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+              <Lock size={14} color="var(--text-gold)" />
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                Confidential memory
+              </span>
+            </div>
+
+            {/* Aura Gold Liquid Reveal Button */}
+            <div className="aura aura-gold">
+              <div className="card bg-base-100">
+                <div className="card-body">
+                  <button
+                    id={`memory-reveal-btn-${memory.id}`}
+                    type="button"
+                    onClick={() => onToggleReveal(memory.id)}
+                    className="neu-btn"
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      fontSize: '0.75rem',
+                      gap: '0.35rem',
+                      borderRadius: 'calc(var(--radius-sm, 8px) - 1.5px)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-gold)',
+                      fontWeight: 600,
+                      border: 'none',
+                      boxShadow: 'none',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Eye size={13} color="var(--gold-primary)" />
+                    <span>Reveal</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div>
+            {contentText && (
+              <p
+                style={{
+                  fontSize: '0.875rem',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.55,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'anywhere',
+                  margin: 0
+                }}
+              >
+                {displayContent}
+                {isLongContent && (
+                  <button
+                    type="button"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--gold-primary)',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontSize: '0.8125rem',
+                      marginLeft: '0.35rem',
+                      padding: 0,
+                      outline: 'none',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    {isExpanded ? 'less' : 'more'}
+                  </button>
+                )}
+              </p>
+            )}
+
+            {/* Aura Gold Liquid Hide Button */}
+            {memory.isPrivate && isRevealed && (
+              <div className="aura aura-gold" style={{ marginTop: '0.45rem' }}>
+                <div className="card bg-base-100">
+                  <div className="card-body">
+                    <button
+                      id={`memory-hide-btn-${memory.id}`}
+                      type="button"
+                      onClick={() => onToggleReveal(memory.id)}
+                      className="neu-btn"
+                      style={{
+                        padding: '0.25rem 0.65rem',
+                        fontSize: '0.75rem',
+                        gap: '0.35rem',
+                        borderRadius: 'calc(var(--radius-sm, 8px) - 1.5px)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-gold)',
+                        fontWeight: 600,
+                        border: 'none',
+                        boxShadow: 'none',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <EyeOff size={13} color="var(--gold-primary)" />
+                      <span>Hide</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 6. PEOPLE SECTION (Hidden if no people associated) */}
+        {peopleList.length > 0 && !isPrivateHidden && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              flexWrap: 'wrap',
+              marginTop: '0.25rem'
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                fontSize: '0.75rem',
+                color: 'var(--gold-primary)',
+                marginRight: '0.15rem'
+              }}
+              title="Associated People"
+            >
+              <User size={12} />
+            </span>
+
+            {visiblePeople.map((person) => (
+              <span
+                key={person}
+                className="neu-inset"
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '0.15rem 0.55rem',
+                  borderRadius: 'var(--radius-pill)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 500,
+                  border: '1px solid var(--border-subtle)',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {person}
+              </span>
+            ))}
+
+            {remainingPeopleCount > 0 && (
+              <span
+                className="neu-inset"
+                style={{
+                  fontSize: '0.6875rem',
+                  padding: '0.15rem 0.45rem',
+                  borderRadius: 'var(--radius-pill)',
+                  color: 'var(--text-gold)',
+                  fontWeight: 700,
+                  border: '1px solid var(--border-gold-subtle)'
+                }}
+                title={peopleList.slice(maxDisplayPeople).join(', ')}
+              >
+                +{remainingPeopleCount}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* 7. FLOATING ACTION BUTTONS: favorites then public/private then pin then edit */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            flexShrink: 0,
-            marginLeft: 'auto'
+            gap: '0.55rem',
+            marginTop: 'auto',
+            paddingTop: '0.4rem'
           }}
         >
-          {/* Favorite Button */}
+          {/* 1st: Favorites (Like) */}
           <button
             id={`memory-fav-btn-${memory.id}`}
             type="button"
             onClick={() => onToggleFavorite(memory.id, memory.isFavorite)}
-            onMouseEnter={() => setFavoriteHover(true)}
-            onMouseLeave={() => setFavoriteHover(false)}
-            className="neu-icon-btn"
-            style={{
-              width: '36px',
-              height: '36px',
-              color: memory.isFavorite
-                ? 'var(--gold-primary)'
-                : favoriteHover
-                ? 'var(--text-gold)'
-                : 'var(--text-muted)'
-            }}
+            className={`reminisce-fab-btn ${memory.isFavorite ? 'is-active' : ''}`}
             title={memory.isFavorite ? 'Remove from favorites' : 'Mark as favorite'}
             aria-label={memory.isFavorite ? 'Remove from favorites' : 'Mark as favorite'}
           >
             <Heart
-              size={16}
+              size={14}
               fill={memory.isFavorite ? 'var(--gold-primary)' : 'none'}
+              color={memory.isFavorite ? 'var(--gold-primary)' : 'var(--text-secondary)'}
               strokeWidth={memory.isFavorite ? 2.5 : 2}
             />
           </button>
 
-          {/* Edit Icon Button (Only entry point for editing) */}
+          {/* 2nd: Public / Private */}
+          <button
+            id={`memory-private-btn-${memory.id}`}
+            type="button"
+            onClick={() => onTogglePrivate(memory.id, memory.isPrivate)}
+            className={`reminisce-fab-btn ${memory.isPrivate ? 'is-active' : ''}`}
+            title={memory.isPrivate ? 'Make memory public' : 'Make memory private'}
+            aria-label={memory.isPrivate ? 'Make memory public' : 'Make memory private'}
+          >
+            <Lock
+              size={13}
+              color={memory.isPrivate ? 'var(--gold-primary)' : 'var(--text-secondary)'}
+            />
+          </button>
+
+          {/* 3rd: Pin */}
+          <button
+            id={`memory-pin-btn-${memory.id}`}
+            type="button"
+            onClick={() => onTogglePin(memory.id, memory.isPinned)}
+            className={`reminisce-fab-btn ${memory.isPinned ? 'is-active' : ''}`}
+            title={memory.isPinned ? 'Unpin memory' : 'Pin memory to top'}
+            aria-label={memory.isPinned ? 'Unpin memory' : 'Pin memory to top'}
+          >
+            <Pin
+              size={13}
+              color={memory.isPinned ? 'var(--gold-primary)' : 'var(--text-secondary)'}
+            />
+          </button>
+
+          {/* 4th: Edit */}
           <button
             id={`memory-edit-btn-${memory.id}`}
             type="button"
             onClick={() => onEdit(memory)}
-            className="neu-icon-btn"
-            style={{ width: '36px', height: '36px' }}
+            className="reminisce-fab-btn"
             title="Edit memory"
             aria-label="Edit memory"
           >
-            <Edit3 size={15} />
+            <Edit3 size={13} color="var(--text-secondary)" />
           </button>
         </div>
       </div>
-
-      {/* Elapsed Time Banner (Shown ONLY during first 24h of creation for today's memory) */}
-      {elapsedTime && (
-        <div
-          className="neu-inset"
-          style={{
-            padding: '0.35rem 0.75rem',
-            borderRadius: 'var(--radius-sm)',
-            fontSize: '0.75rem',
-            color: 'var(--text-gold)',
-            fontWeight: 600,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            width: 'fit-content'
-          }}
-        >
-          <Sparkles size={13} color="var(--gold-primary)" />
-          <span>{elapsedTime}</span>
-        </div>
-      )}
-
-      {/* Content Area with Privacy Masking */}
-      {isPrivateHidden ? (
-        <div
-          className="neu-inset"
-          style={{
-            padding: '1.25rem',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.75rem',
-            textAlign: 'center',
-            backgroundColor: 'var(--surface-control)',
-            border: '1px dashed var(--border-gold-subtle)'
-          }}
-        >
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              background: 'var(--surface-raised)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-gold)',
-              boxShadow: 'var(--neu-shadow-raised-sm)'
-            }}
-          >
-            <Lock size={18} />
-          </div>
-          <div>
-            <h4
-              style={{
-                fontSize: '0.9375rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                marginBottom: '0.15rem'
-              }}
-            >
-              Private Memory Hidden
-            </h4>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-              This memory is marked as confidential. Click below to reveal its contents.
-            </p>
-          </div>
-          <button
-            id={`memory-reveal-btn-${memory.id}`}
-            type="button"
-            onClick={() => onToggleReveal(memory.id)}
-            className="neu-btn"
-            style={{
-              padding: '0.45rem 1rem',
-              fontSize: '0.8125rem',
-              gap: '0.4rem'
-            }}
-          >
-            <Eye size={14} />
-            <span>Reveal Memory</span>
-          </button>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', minWidth: 0 }}>
-          {/* Full Title (Never truncated with ellipses; wraps naturally across lines) */}
-          <h3
-            style={{
-              fontSize: '1.125rem',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              lineHeight: 1.45,
-              wordBreak: 'break-word',
-              overflowWrap: 'anywhere'
-            }}
-          >
-            {memory.title}
-          </h3>
-
-          {/* Notes Paragraph */}
-          {memory.notes && (
-            <p
-              style={{
-                fontSize: '0.9375rem',
-                color: 'var(--text-secondary)',
-                lineHeight: 1.6,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                overflowWrap: 'anywhere'
-              }}
-            >
-              {memory.notes}
-            </p>
-          )}
-
-          {/* If private and revealed, allow hiding it again */}
-          {memory.isPrivate && isRevealed && (
-            <div style={{ paddingTop: '0.25rem' }}>
-              <button
-                id={`memory-hide-btn-${memory.id}`}
-                type="button"
-                onClick={() => onToggleReveal(memory.id)}
-                className="neu-btn"
-                style={{
-                  padding: '0.35rem 0.75rem',
-                  fontSize: '0.75rem',
-                  gap: '0.35rem',
-                  color: 'var(--text-muted)'
-                }}
-              >
-                <EyeOff size={13} />
-                <span>Hide private details</span>
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* People Tagged Badges */}
-      {memory.people && memory.people.length > 0 && !isPrivateHidden && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            flexWrap: 'wrap',
-            paddingTop: '0.5rem',
-            borderTop: '1px solid var(--border-subtle)',
-            width: '100%',
-            boxSizing: 'border-box'
-          }}
-        >
-          <span
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem'
-            }}
-          >
-            <User size={12} /> People:
-          </span>
-          {memory.people.map((personName) => (
-            <span
-              key={personName}
-              className="neu-inset"
-              style={{
-                fontSize: '0.75rem',
-                padding: '0.2rem 0.6rem',
-                borderRadius: 'var(--radius-pill)',
-                color: 'var(--text-primary)',
-                fontWeight: 500,
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-              {personName}
-            </span>
-          ))}
-        </div>
-      )}
     </article>
   );
 }

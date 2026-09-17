@@ -15,12 +15,117 @@ import { getTodayDateString } from '../utils/reminisceUtils';
 const MEMORIES_STORAGE_KEY = 'sb_reminisce_memories_';
 const PEOPLE_STORAGE_KEY = 'sb_reminisce_people_';
 
+function getDefaultStarterMemories(userId: string): MemoryItem[] {
+  const now = Date.now();
+  return [
+    {
+      id: 'mem_pinned_late_night',
+      userId,
+      title: 'Late Night Thoughts',
+      notes: 'Sometimes the quietest moments say the most.',
+      mood: '🥰',
+      memoryDate: '2026-09-17',
+      memoryTime: '02:24',
+      people: [],
+      isPinned: true,
+      isFavorite: true,
+      isPrivate: false,
+      createdAt: now - 3600000 * 2
+    },
+    {
+      id: 'mem_multiple_people',
+      userId,
+      title: 'Architecture & Second Brain Strategy',
+      notes: 'Deep dive into spatial memory systems and personal knowledge graphing over coffee.',
+      mood: '🤯',
+      memoryDate: '2026-09-16',
+      memoryTime: '14:30',
+      people: ['Alexander Wright', 'Maya Lin', 'David Chen'],
+      isPinned: false,
+      isFavorite: false,
+      isPrivate: false,
+      createdAt: now - 86400000 * 1
+    },
+    {
+      id: 'mem_private_reflection',
+      userId,
+      title: 'Deep Personal Journal & Aspirations',
+      notes: 'Private contemplation on focus, personal boundaries, and building enduring creative habits for the coming year.',
+      mood: '💜',
+      memoryDate: '2026-09-15',
+      memoryTime: '21:15',
+      people: [],
+      isPinned: false,
+      isFavorite: true,
+      isPrivate: true,
+      createdAt: now - 86400000 * 2
+    },
+    {
+      id: 'mem_long_title_content',
+      userId,
+      title: 'Reflecting on the Architectural Milestones and Long-Term Vision for the Second Brain Knowledge Vault',
+      notes: 'Today marked a pivotal shift in how we synthesize fleeting ideas into persistent insights. By organizing thoughts across structured memory nodes and anchoring daily reflections in a dedicated date rail, the cognitive load diminishes dramatically. Every small reflection compound over weeks and months into an irreplaceable archive of growth.',
+      mood: '🥰',
+      memoryDate: '2026-09-12',
+      memoryTime: '10:05',
+      people: ['Alexander Wright', 'Elena Vance'],
+      isPinned: false,
+      isFavorite: false,
+      isPrivate: false,
+      createdAt: now - 86400000 * 5
+    },
+    {
+      id: 'mem_normal_solo',
+      userId,
+      title: 'Quiet Morning Espresso & Reading',
+      notes: 'The morning light cast warm shadows across the desk while finishing the final chapters of architectural philosophy.',
+      mood: '🥰',
+      memoryDate: '2026-09-08',
+      memoryTime: '07:45',
+      people: [],
+      isPinned: false,
+      isFavorite: false,
+      isPrivate: false,
+      createdAt: now - 86400000 * 9
+    },
+    {
+      id: 'mem_anger_breakthrough',
+      userId,
+      title: 'Overcoming Deployment Setbacks',
+      notes: 'Frustrating synchronization errors took hours to isolate, but discovering the underlying race condition made the perseverance worthwhile.',
+      mood: '😤',
+      memoryDate: '2026-08-30',
+      memoryTime: '18:20',
+      people: ['Maya Lin'],
+      isPinned: false,
+      isFavorite: false,
+      isPrivate: false,
+      createdAt: now - 86400000 * 18
+    }
+  ];
+}
+
+function getDefaultStarterPeople(userId: string): PersonItem[] {
+  const now = Date.now();
+  return [
+    { id: 'p_alex', userId, name: 'Alexander Wright', createdAt: now - 10000 },
+    { id: 'p_david', userId, name: 'David Chen', createdAt: now - 20000 },
+    { id: 'p_elena', userId, name: 'Elena Vance', createdAt: now - 30000 },
+    { id: 'p_maya', userId, name: 'Maya Lin', createdAt: now - 40000 }
+  ];
+}
+
 function getLocalMemories(userId: string): MemoryItem[] {
   try {
     const raw = localStorage.getItem(MEMORIES_STORAGE_KEY + userId);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) {
+      const starter = getDefaultStarterMemories(userId);
+      setLocalMemories(userId, starter);
+      return starter;
+    }
+    return JSON.parse(raw);
   } catch {
-    return [];
+    return getDefaultStarterMemories(userId);
   }
 }
 
@@ -35,9 +140,14 @@ function setLocalMemories(userId: string, memories: MemoryItem[]) {
 function getLocalPeople(userId: string): PersonItem[] {
   try {
     const raw = localStorage.getItem(PEOPLE_STORAGE_KEY + userId);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) {
+      const starter = getDefaultStarterPeople(userId);
+      setLocalPeople(userId, starter);
+      return starter;
+    }
+    return JSON.parse(raw);
   } catch {
-    return [];
+    return getDefaultStarterPeople(userId);
   }
 }
 
@@ -50,90 +160,18 @@ function setLocalPeople(userId: string, people: PersonItem[]) {
 }
 
 /**
- * Generates initial rich starter memories if a user starts with an empty slate,
- * including an anniversary match for today's date and a sample private memory.
- */
-function getInitialStarterMemories(userId: string): { memories: MemoryItem[]; people: PersonItem[] } {
-  const today = getTodayDateString();
-  const [currentYear, mm, dd] = today.split('-');
-  const prevYear = String(Number(currentYear) - 1);
-  const anniversaryDate = `${prevYear}-${mm}-${dd}`;
-
-  const initialPeople: PersonItem[] = [
-    { id: 'p1', userId, name: 'Maya Lin', createdAt: Date.now() - 30 * 86400000 },
-    { id: 'p2', userId, name: 'Alexander Wright', createdAt: Date.now() - 60 * 86400000 },
-    { id: 'p3', userId, name: 'Elena Rostova', createdAt: Date.now() - 90 * 86400000 }
-  ];
-
-  const initialMemories: MemoryItem[] = [
-    {
-      id: 'm-anniversary',
-      userId,
-      title: 'Dawn hike to the Golden Ridge Summit with Alexander and Maya',
-      notes: 'We reached the peak just as the morning sun illuminated the entire valley in liquid gold. A moment of pristine clarity and shared purpose that I will remember forever.',
-      memoryDate: anniversaryDate,
-      memoryTime: '06:15',
-      createdAt: Date.now() - 365 * 86400000,
-      mood: '🥰',
-      people: ['Alexander Wright', 'Maya Lin'],
-      isPrivate: false,
-      isPinned: true,
-      isFavorite: true
-    },
-    {
-      id: 'm-today',
-      userId,
-      title: 'Launching the SECOND BRAIN Architecture and personal knowledge sanctuary',
-      notes: 'Finalized the core foundations of the personal knowledge vault. Stepping into this new chapter with discipline, high aesthetic standards, and deep creative focus.',
-      memoryDate: today,
-      memoryTime: '13:00',
-      createdAt: Date.now() - 2 * 3600000, // 2 hours ago (triggers first 24h elapsed time display)
-      mood: '😄',
-      people: ['Elena Rostova'],
-      isPrivate: false,
-      isPinned: true,
-      isFavorite: true
-    },
-    {
-      id: 'm-private',
-      userId,
-      title: 'Personal breakthrough reflection on life philosophy and quiet goals',
-      notes: 'A private reflection on letting go of external expectations and constructing meaningful personal projects from the inside out.',
-      memoryDate: today,
-      memoryTime: '11:30',
-      createdAt: Date.now() - 4 * 3600000,
-      mood: '😀',
-      people: [],
-      isPrivate: true,
-      isPinned: false,
-      isFavorite: false
-    }
-  ];
-
-  return { memories: initialMemories, people: initialPeople };
-}
-
-/**
  * Subscribes to memories for a user.
- * Tries Firestore first; falls back to localStorage if Firestore is not provisioned or offline.
+ * Connects directly to Cloud Firestore collection 'users/{userId}/memories',
+ * using localStorage as an offline caching layer.
  */
 export function subscribeMemories(
   userId: string,
   onUpdate: (memories: MemoryItem[]) => void
 ): () => void {
-  let localMemories = getLocalMemories(userId);
-
-  // If first time and completely empty, populate sample memories
-  if (localMemories.length === 0) {
-    const { memories, people } = getInitialStarterMemories(userId);
-    setLocalMemories(userId, memories);
-    setLocalPeople(userId, people);
-    localMemories = memories;
-  }
-
+  const localMemories = getLocalMemories(userId);
   onUpdate(localMemories);
 
-  if (!db || userId === 'guest_user') {
+  if (!db) {
     return () => {};
   }
 
@@ -144,33 +182,33 @@ export function subscribeMemories(
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        if (!snapshot.empty) {
-          const firestoreMemories: MemoryItem[] = [];
-          snapshot.forEach((docSnap) => {
-            firestoreMemories.push({ id: docSnap.id, ...(docSnap.data() as Omit<MemoryItem, 'id'>) });
-          });
-          setLocalMemories(userId, firestoreMemories);
-          onUpdate(firestoreMemories);
-        } else if (localMemories.length > 0) {
-          // If Firestore collection is empty, seed it with local memories
-          localMemories.forEach(async (m) => {
-            try {
-              await setDoc(doc(db!, 'users', userId, 'memories', m.id), m);
-            } catch {
-              // ignore seed errors
-            }
-          });
+        if (snapshot.empty) {
+          const local = getLocalMemories(userId);
+          if (local.length > 0) {
+            onUpdate(local);
+            return;
+          }
         }
+        const firestoreMemories: MemoryItem[] = [];
+        const seenIds = new Set<string>();
+        snapshot.forEach((docSnap) => {
+          if (!seenIds.has(docSnap.id)) {
+            seenIds.add(docSnap.id);
+            firestoreMemories.push({ id: docSnap.id, ...(docSnap.data() as Omit<MemoryItem, 'id'>) });
+          }
+        });
+        setLocalMemories(userId, firestoreMemories);
+        onUpdate(firestoreMemories);
       },
       (error) => {
-        console.warn('Firestore subscription fallback to local cache:', error);
+        console.warn('Firestore subscription notice (using local cache):', error);
         onUpdate(getLocalMemories(userId));
       }
     );
 
     return unsubscribe;
   } catch (err) {
-    console.warn('Firestore error, using local storage for memories:', err);
+    console.warn('Firestore memory subscription error:', err);
     return () => {};
   }
 }
@@ -182,16 +220,10 @@ export function subscribePeople(
   userId: string,
   onUpdate: (people: PersonItem[]) => void
 ): () => void {
-  let localPeople = getLocalPeople(userId);
-  if (localPeople.length === 0) {
-    const { people } = getInitialStarterMemories(userId);
-    setLocalPeople(userId, people);
-    localPeople = people;
-  }
-
+  const localPeople = getLocalPeople(userId);
   onUpdate(localPeople);
 
-  if (!db || userId === 'guest_user') {
+  if (!db) {
     return () => {};
   }
 
@@ -202,25 +234,15 @@ export function subscribePeople(
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        if (!snapshot.empty) {
-          const firestorePeople: PersonItem[] = [];
-          snapshot.forEach((docSnap) => {
-            firestorePeople.push({ id: docSnap.id, ...(docSnap.data() as Omit<PersonItem, 'id'>) });
-          });
-          setLocalPeople(userId, firestorePeople);
-          onUpdate(firestorePeople);
-        } else if (localPeople.length > 0) {
-          localPeople.forEach(async (p) => {
-            try {
-              await setDoc(doc(db!, 'users', userId, 'people', p.id), p);
-            } catch {
-              // ignore seed errors
-            }
-          });
-        }
+        const firestorePeople: PersonItem[] = [];
+        snapshot.forEach((docSnap) => {
+          firestorePeople.push({ id: docSnap.id, ...(docSnap.data() as Omit<PersonItem, 'id'>) });
+        });
+        setLocalPeople(userId, firestorePeople);
+        onUpdate(firestorePeople);
       },
       (error) => {
-        console.warn('Firestore people fallback to local cache:', error);
+        console.warn('Firestore people subscription notice:', error);
         onUpdate(getLocalPeople(userId));
       }
     );
@@ -339,7 +361,15 @@ export async function updateMemory(
     memoryTime: updates.memoryTime !== undefined ? updates.memoryTime : existing.memoryTime
   };
 
-  const updatedList = current.map((m) => (m.id === memoryId ? updatedMemory : m));
+  const seen = new Set<string>();
+  const updatedList: MemoryItem[] = [];
+  for (const m of current) {
+    const item = m.id === memoryId ? updatedMemory : m;
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      updatedList.push(item);
+    }
+  }
   setLocalMemories(userId, updatedList);
 
   let firestoreSynced = false;

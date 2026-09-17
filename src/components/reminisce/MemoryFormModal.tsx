@@ -1,22 +1,23 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import type { MemoryItem, PersonItem } from '../../types/reminisce';
-import { ALL_MOOD_EMOJIS } from '../../types/reminisce';
+import { FIVE_MOODS } from '../../types/reminisce';
 import {
   getTodayDateString,
   getCurrentTimeString
 } from '../../utils/reminisceUtils';
+import { ModernTimePicker } from './ModernTimePicker';
 import {
   X,
   Calendar,
-  Clock,
   User,
   Plus,
-  Lock,
   Pin,
   Heart,
   Trash2,
-  Check,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Check
 } from 'lucide-react';
 
 interface MemoryFormModalProps {
@@ -313,10 +314,10 @@ export function MemoryFormModal({
               />
             </div>
 
-            {/* Time Input */}
+            {/* Time Input (Smooth Modern Time Picker) */}
             <div>
               <label
-                htmlFor="memory-time-input"
+                htmlFor="memory-time-picker"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -327,15 +328,12 @@ export function MemoryFormModal({
                   marginBottom: '0.4rem'
                 }}
               >
-                <Clock size={14} color="var(--gold-primary)" /> Time
+                Time
               </label>
-              <input
-                id="memory-time-input"
-                type="time"
+              <ModernTimePicker
+                id="memory-time-picker"
                 value={memoryTime}
-                onChange={(e) => setMemoryTime(e.target.value)}
-                className="neu-input"
-                style={{ cursor: 'pointer' }}
+                onChange={(t) => setMemoryTime(t)}
               />
             </div>
           </div>
@@ -411,27 +409,27 @@ export function MemoryFormModal({
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: '0.625rem',
+                gap: '0.75rem',
                 alignItems: 'center'
               }}
             >
-              {ALL_MOOD_EMOJIS.map((emojiChar) => {
-                const isSelected = mood === emojiChar;
+              {FIVE_MOODS.map((m) => {
+                const isSelected = mood === m.emoji;
                 return (
                   <button
-                    key={emojiChar}
+                    key={m.name}
                     type="button"
-                    onClick={() => setMood(emojiChar)}
+                    onClick={() => setMood(m.emoji)}
                     className={isSelected ? 'neu-btn-gold' : 'neu-btn'}
                     style={{
-                      width: '44px',
-                      height: '44px',
-                      padding: 0,
+                      minWidth: '60px',
+                      padding: '0.5rem 0.65rem',
                       borderRadius: 'var(--radius-sm)',
-                      fontSize: '1.45rem',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      gap: '0.25rem',
                       fontFamily:
                         '-apple-system, BlinkMacSystemFont, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
                       border: isSelected
@@ -440,12 +438,21 @@ export function MemoryFormModal({
                       boxShadow: isSelected
                         ? 'var(--neu-shadow-recessed-sm), 0 0 10px rgba(212, 175, 55, 0.4)'
                         : 'var(--neu-shadow-raised-sm)',
-                      transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                      transform: isSelected ? 'scale(1.05)' : 'scale(1)',
                       transition: 'all 0.18s ease'
                     }}
-                    aria-label={`Select mood ${emojiChar}`}
+                    aria-label={`Select mood ${m.name}`}
                   >
-                    <span>{emojiChar}</span>
+                    <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{m.emoji}</span>
+                    <span
+                      style={{
+                        fontSize: '0.6875rem',
+                        fontWeight: 600,
+                        color: isSelected ? 'var(--liquid-gold-text)' : 'var(--text-secondary)'
+                      }}
+                    >
+                      {m.name}
+                    </span>
                   </button>
                 );
               })}
@@ -585,69 +592,66 @@ export function MemoryFormModal({
             </div>
           </div>
 
-          {/* Privacy, Pin, and Favorite Toggle Controls */}
+          {/* Floating Action Buttons: Favorites, Public/Private, Pin */}
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-              gap: '0.75rem',
-              paddingTop: '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '1.25rem',
+              paddingTop: '0.75rem',
+              paddingBottom: '0.25rem',
               borderTop: '1px solid var(--border-subtle)'
             }}
           >
-            {/* Privacy Toggle */}
-            <button
-              id="form-privacy-toggle"
-              type="button"
-              onClick={() => setIsPrivate((p) => !p)}
-              className={`neu-btn ${isPrivate ? 'active' : ''}`}
-              style={{
-                justifyContent: 'flex-start',
-                padding: '0.65rem 0.85rem',
-                fontSize: '0.8125rem',
-                borderColor: isPrivate ? 'var(--border-gold-strong)' : 'var(--border-subtle)'
-              }}
-            >
-              <Lock size={15} color={isPrivate ? 'var(--gold-primary)' : 'currentColor'} />
-              <span>{isPrivate ? 'Private (Hidden)' : 'Public Memory'}</span>
-            </button>
-
-            {/* Pin Toggle */}
-            <button
-              id="form-pin-toggle"
-              type="button"
-              onClick={() => setIsPinned((p) => !p)}
-              className={`neu-btn ${isPinned ? 'active' : ''}`}
-              style={{
-                justifyContent: 'flex-start',
-                padding: '0.65rem 0.85rem',
-                fontSize: '0.8125rem',
-                borderColor: isPinned ? 'var(--border-gold-strong)' : 'var(--border-subtle)'
-              }}
-            >
-              <Pin size={15} color={isPinned ? 'var(--gold-primary)' : 'currentColor'} />
-              <span>{isPinned ? 'Pinned to Top' : 'Not Pinned'}</span>
-            </button>
-
-            {/* Favorite Toggle */}
+            {/* 1. Favorites FAB */}
             <button
               id="form-favorite-toggle"
               type="button"
               onClick={() => setIsFavorite((f) => !f)}
-              className={`neu-btn ${isFavorite ? 'active' : ''}`}
-              style={{
-                justifyContent: 'flex-start',
-                padding: '0.65rem 0.85rem',
-                fontSize: '0.8125rem',
-                borderColor: isFavorite ? 'var(--border-gold-strong)' : 'var(--border-subtle)'
-              }}
+              className={`neu-btn modal-action-fab ${isFavorite ? 'active' : ''}`}
+              aria-label={isFavorite ? 'Favorite Memory (Active)' : 'Add to Favorites'}
+              title={isFavorite ? 'Favorite Memory (Active)' : 'Add to Favorites'}
             >
               <Heart
-                size={15}
+                size={22}
                 fill={isFavorite ? 'var(--gold-primary)' : 'none'}
                 color={isFavorite ? 'var(--gold-primary)' : 'currentColor'}
+                strokeWidth={isFavorite ? 2.5 : 2}
               />
-              <span>{isFavorite ? 'Favorite Memory' : 'Add to Favorites'}</span>
+            </button>
+
+            {/* 2. Public / Private Privacy FAB (Eye icon) */}
+            <button
+              id="form-privacy-toggle"
+              type="button"
+              onClick={() => setIsPrivate((p) => !p)}
+              className={`neu-btn modal-action-fab ${isPrivate ? 'active' : ''}`}
+              aria-label={isPrivate ? 'Private Memory (Hidden)' : 'Public Memory'}
+              title={isPrivate ? 'Private Memory (Hidden by default)' : 'Public Memory'}
+            >
+              {isPrivate ? (
+                <EyeOff size={20} color="var(--gold-primary)" strokeWidth={2.4} />
+              ) : (
+                <Eye size={20} color="currentColor" strokeWidth={2} />
+              )}
+            </button>
+
+            {/* 3. Pin FAB */}
+            <button
+              id="form-pin-toggle"
+              type="button"
+              onClick={() => setIsPinned((p) => !p)}
+              className={`neu-btn modal-action-fab ${isPinned ? 'active' : ''}`}
+              aria-label={isPinned ? 'Pinned to Top (Active)' : 'Pin to Top'}
+              title={isPinned ? 'Pinned to Top (Active)' : 'Pin to Top'}
+            >
+              <Pin
+                size={20}
+                color={isPinned ? 'var(--gold-primary)' : 'currentColor'}
+                fill={isPinned ? 'var(--gold-primary)' : 'none'}
+                strokeWidth={isPinned ? 2.4 : 2}
+              />
             </button>
           </div>
 
