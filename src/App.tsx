@@ -7,6 +7,7 @@ import { DesktopSidebar } from './components/layout/DesktopSidebar';
 import { MobileNav } from './components/layout/MobileNav';
 import { SubpagePlaceholder } from './components/pages/SubpagePlaceholder';
 import { ReminiscePage } from './components/reminisce/ReminiscePage';
+import { NotesPage } from './components/notes/NotesPage';
 import type { SubpageId, TodoSectionId } from './types';
 
 function MainAppShell() {
@@ -112,6 +113,8 @@ function MainAppShell() {
         <div className="content-stage">
           {activeSubpage === 'reminisce' ? (
             <ReminiscePage />
+          ) : activeSubpage === 'notes' ? (
+            <NotesPage />
           ) : (
             <SubpagePlaceholder
               activeSubpage={activeSubpage}

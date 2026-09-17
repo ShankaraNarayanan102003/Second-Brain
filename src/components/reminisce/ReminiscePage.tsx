@@ -25,6 +25,7 @@ import {
   isDateInCurrentYear
 } from '../../utils/reminisceUtils';
 import { MemoryCard } from './MemoryCard';
+import { MemoryTimelineView } from './MemoryTimelineView';
 import { MemoryFormModal } from './MemoryFormModal';
 import { FloatingAddButton } from './FloatingAddButton';
 import {
@@ -187,7 +188,7 @@ export function ReminiscePage() {
     try {
       if (editingMemory) {
         const res = await updateMemory(userId, editingMemory.id, data);
-        setMemories((prev) => prev.map((m) => (m.id === editingMemory.id ? res.memory : m)));
+        setMemories((prev) => deduplicateMemories(prev.map((m) => (m.id === editingMemory.id ? res.memory : m))));
         showToast(
           'Memory updated successfully!',
           res.firestoreSynced
@@ -197,7 +198,7 @@ export function ReminiscePage() {
         );
       } else {
         const res = await addMemory(userId, data);
-        setMemories((prev) => [res.memory, ...prev.filter((m) => m.id !== res.memory.id)]);
+        setMemories((prev) => deduplicateMemories([res.memory, ...prev.filter((m) => m.id !== res.memory.id)]));
         showToast(
           'Memory saved successfully!',
           res.firestoreSynced
@@ -220,7 +221,7 @@ export function ReminiscePage() {
   const handleDeleteMemory = async (id: string) => {
     try {
       const res = await deleteMemory(userId, id);
-      setMemories((prev) => prev.filter((m) => m.id !== id));
+      setMemories((prev) => deduplicateMemories(prev.filter((m) => m.id !== id)));
       showToast(
         'Memory deleted successfully.',
         res.firestoreSynced
@@ -1053,53 +1054,15 @@ export function ReminiscePage() {
             </div>
           </div>
 
-          {timelineTabMemories.length === 0 ? (
-            <div
-              className="neu-inset"
-              style={{
-                padding: '3rem 1.5rem',
-                borderRadius: 'var(--radius-md)',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.75rem'
-              }}
-            >
-              <Clock size={28} color="var(--gold-primary)" />
-              <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', maxWidth: '420px' }}>
-                No memories found for the selected timeline period.
-              </p>
-              {(timelineYear !== 'all' || timelineMonth !== 'all') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTimelineYear('all');
-                    setTimelineMonth('all');
-                  }}
-                  className="neu-btn"
-                  style={{ padding: '0.45rem 1rem', fontSize: '0.8125rem' }}
-                >
-                  Reset timeline filters
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="reminisce-cards-grid">
-              {timelineTabMemories.map((memory) => (
-                <MemoryCard
-                  key={`timeline-${memory.id}`}
-                  memory={memory}
-                  isRevealed={revealedMemoryIds.has(memory.id)}
-                  onToggleReveal={handleToggleReveal}
-                  onToggleFavorite={handleToggleFavorite}
-                  onTogglePrivate={handleTogglePrivate}
-                  onTogglePin={handleTogglePin}
-                  onEdit={handleEdit}
-                />
-              ))}
-            </div>
-          )}
+          <MemoryTimelineView
+            memories={timelineTabMemories}
+            revealedMemoryIds={revealedMemoryIds}
+            onToggleReveal={handleToggleReveal}
+            onToggleFavorite={handleToggleFavorite}
+            onTogglePrivate={handleTogglePrivate}
+            onTogglePin={handleTogglePin}
+            onEdit={handleEdit}
+          />
         </section>
       )}
 

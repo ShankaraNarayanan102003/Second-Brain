@@ -4,16 +4,65 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
-  onSnapshot,
+  getDocs,
   query,
   orderBy
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import type { MemoryItem, PersonItem } from '../types/reminisce';
-import { getTodayDateString } from '../utils/reminisceUtils';
 
 const MEMORIES_STORAGE_KEY = 'sb_reminisce_memories_';
 const PEOPLE_STORAGE_KEY = 'sb_reminisce_people_';
+
+// In-memory shared caches to prevent repeated Firestore reads across tab switches,
+// filters, and component re-renders
+const memoryCache = new Map<string, MemoryItem[]>();
+const peopleCache = new Map<string, PersonItem[]>();
+const memoriesFetchedUsers = new Set<string>();
+const peopleFetchedUsers = new Set<string>();
+
+// Active local subscribers for immediate synchronous notifications
+const memoryListeners = new Map<string, Set<(memories: MemoryItem[]) => void>>();
+const peopleListeners = new Map<string, Set<(people: PersonItem[]) => void>>();
+
+export function deduplicateMemories(list: MemoryItem[]): MemoryItem[] {
+  const seen = new Set<string>();
+  const result: MemoryItem[] = [];
+  for (const item of list) {
+    if (item && item.id && !seen.has(item.id)) {
+      seen.add(item.id);
+      result.push(item);
+    }
+  }
+  return result;
+}
+
+function notifyMemoryListeners(userId: string, memories: MemoryItem[]) {
+  const listeners = memoryListeners.get(userId);
+  if (listeners) {
+    const deduplicated = deduplicateMemories(memories);
+    listeners.forEach((listener) => {
+      try {
+        listener(deduplicated);
+      } catch (err) {
+        console.warn('Memory listener error:', err);
+      }
+    });
+  }
+}
+
+function notifyPeopleListeners(userId: string, people: PersonItem[]) {
+  const listeners = peopleListeners.get(userId);
+  if (listeners) {
+    listeners.forEach((listener) => {
+      try {
+        listener(people);
+      } catch (err) {
+        console.warn('People listener error:', err);
+      }
+    });
+  }
+}
 
 function getDefaultStarterMemories(userId: string): MemoryItem[] {
   const now = Date.now();
@@ -115,7 +164,11 @@ function getDefaultStarterPeople(userId: string): PersonItem[] {
   ];
 }
 
-function getLocalMemories(userId: string): MemoryItem[] {
+export function getLocalMemories(userId: string): MemoryItem[] {
+  const cached = memoryCache.get(userId);
+  if (cached && cached.length > 0) {
+    return cached;
+  }
   try {
     const raw = localStorage.getItem(MEMORIES_STORAGE_KEY + userId);
     if (!raw) {
@@ -123,21 +176,31 @@ function getLocalMemories(userId: string): MemoryItem[] {
       setLocalMemories(userId, starter);
       return starter;
     }
-    return JSON.parse(raw);
+    const parsed = deduplicateMemories(JSON.parse(raw));
+    memoryCache.set(userId, parsed);
+    return parsed;
   } catch {
-    return getDefaultStarterMemories(userId);
+    const fallback = getDefaultStarterMemories(userId);
+    memoryCache.set(userId, fallback);
+    return fallback;
   }
 }
 
-function setLocalMemories(userId: string, memories: MemoryItem[]) {
+export function setLocalMemories(userId: string, memories: MemoryItem[]) {
+  const clean = deduplicateMemories(memories);
+  memoryCache.set(userId, clean);
   try {
-    localStorage.setItem(MEMORIES_STORAGE_KEY + userId, JSON.stringify(memories));
+    localStorage.setItem(MEMORIES_STORAGE_KEY + userId, JSON.stringify(clean));
   } catch (err) {
     console.warn('Local storage write warning:', err);
   }
 }
 
-function getLocalPeople(userId: string): PersonItem[] {
+export function getLocalPeople(userId: string): PersonItem[] {
+  const cached = peopleCache.get(userId);
+  if (cached && cached.length > 0) {
+    return cached;
+  }
   try {
     const raw = localStorage.getItem(PEOPLE_STORAGE_KEY + userId);
     if (!raw) {
@@ -145,13 +208,18 @@ function getLocalPeople(userId: string): PersonItem[] {
       setLocalPeople(userId, starter);
       return starter;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    peopleCache.set(userId, parsed);
+    return parsed;
   } catch {
-    return getDefaultStarterPeople(userId);
+    const fallback = getDefaultStarterPeople(userId);
+    peopleCache.set(userId, fallback);
+    return fallback;
   }
 }
 
-function setLocalPeople(userId: string, people: PersonItem[]) {
+export function setLocalPeople(userId: string, people: PersonItem[]) {
+  peopleCache.set(userId, people);
   try {
     localStorage.setItem(PEOPLE_STORAGE_KEY + userId, JSON.stringify(people));
   } catch (err) {
@@ -160,110 +228,137 @@ function setLocalPeople(userId: string, people: PersonItem[]) {
 }
 
 /**
- * Subscribes to memories for a user.
- * Connects directly to Cloud Firestore collection 'users/{userId}/memories',
- * using localStorage as an offline caching layer.
+ * Optimized memory subscription that MINIMIZES FIRESTORE READS.
+ * - Serves in-memory / local cache immediately (0 ms, 0 Firestore reads).
+ * - Avoids continuous real-time listeners (onSnapshot) that incur reads on every change or write.
+ * - Fetches from Firestore only ONCE per session per user.
+ * - Tab switches, filter changes, and mutations consume ZERO additional Firestore reads.
  */
 export function subscribeMemories(
   userId: string,
   onUpdate: (memories: MemoryItem[]) => void
 ): () => void {
+  // Register listener for instantaneous local updates
+  if (!memoryListeners.has(userId)) {
+    memoryListeners.set(userId, new Set());
+  }
+  memoryListeners.get(userId)!.add(onUpdate);
+
+  // Serve current in-memory / local cached memories immediately
   const localMemories = getLocalMemories(userId);
   onUpdate(localMemories);
 
-  if (!db) {
-    return () => {};
+  // If already fetched from Firestore in this session or db unavailable, no Firestore read needed
+  if (!db || userId === 'guest_user' || memoriesFetchedUsers.has(userId)) {
+    return () => {
+      memoryListeners.get(userId)?.delete(onUpdate);
+    };
   }
 
-  try {
-    const memoriesRef = collection(db, 'users', userId, 'memories');
-    const q = query(memoriesRef, orderBy('createdAt', 'desc'));
+  // Single-read fetch only once per user session
+  memoriesFetchedUsers.add(userId);
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        if (snapshot.empty) {
-          const local = getLocalMemories(userId);
-          if (local.length > 0) {
-            onUpdate(local);
-            return;
-          }
-        }
+  (async () => {
+    try {
+      const memoriesRef = collection(db, 'users', userId, 'memories');
+      const q = query(memoriesRef, orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
         const firestoreMemories: MemoryItem[] = [];
         const seenIds = new Set<string>();
         snapshot.forEach((docSnap) => {
           if (!seenIds.has(docSnap.id)) {
             seenIds.add(docSnap.id);
-            firestoreMemories.push({ id: docSnap.id, ...(docSnap.data() as Omit<MemoryItem, 'id'>) });
+            const data = docSnap.data();
+            firestoreMemories.push({
+              id: docSnap.id,
+              userId,
+              title: data.title || '',
+              notes: data.notes || '',
+              memoryDate: data.memoryDate || '',
+              memoryTime: data.memoryTime || '',
+              mood: data.mood || '🥰',
+              people: Array.isArray(data.people) ? data.people : [],
+              isPrivate: Boolean(data.isPrivate),
+              isPinned: Boolean(data.isPinned),
+              isFavorite: Boolean(data.isFavorite),
+              createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now()
+            });
           }
         });
-        setLocalMemories(userId, firestoreMemories);
-        onUpdate(firestoreMemories);
-      },
-      (error) => {
-        console.warn('Firestore subscription notice (using local cache):', error);
-        onUpdate(getLocalMemories(userId));
-      }
-    );
 
-    return unsubscribe;
-  } catch (err) {
-    console.warn('Firestore memory subscription error:', err);
-    return () => {};
-  }
+        const deduplicated = deduplicateMemories(firestoreMemories);
+        setLocalMemories(userId, deduplicated);
+        notifyMemoryListeners(userId, deduplicated);
+      }
+    } catch (error) {
+      console.warn('Firestore initial fetch notice (retaining local cache):', error);
+    }
+  })();
+
+  return () => {
+    memoryListeners.get(userId)?.delete(onUpdate);
+  };
 }
 
 /**
- * Subscribes to the people list for a user.
+ * Optimized people subscription that MINIMIZES FIRESTORE READS.
+ * - Serves cached people immediately.
+ * - Fetches from Firestore only ONCE per session per user.
  */
 export function subscribePeople(
   userId: string,
   onUpdate: (people: PersonItem[]) => void
 ): () => void {
+  if (!peopleListeners.has(userId)) {
+    peopleListeners.set(userId, new Set());
+  }
+  peopleListeners.get(userId)!.add(onUpdate);
+
   const localPeople = getLocalPeople(userId);
   onUpdate(localPeople);
 
-  if (!db) {
-    return () => {};
+  if (!db || userId === 'guest_user' || peopleFetchedUsers.has(userId)) {
+    return () => {
+      peopleListeners.get(userId)?.delete(onUpdate);
+    };
   }
 
-  try {
-    const peopleRef = collection(db, 'users', userId, 'people');
-    const q = query(peopleRef, orderBy('name', 'asc'));
+  peopleFetchedUsers.add(userId);
 
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
+  (async () => {
+    try {
+      const peopleRef = collection(db, 'users', userId, 'people');
+      const q = query(peopleRef, orderBy('name', 'asc'));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
         const firestorePeople: PersonItem[] = [];
+        const seen = new Set<string>();
         snapshot.forEach((docSnap) => {
-          firestorePeople.push({ id: docSnap.id, ...(docSnap.data() as Omit<PersonItem, 'id'>) });
+          if (!seen.has(docSnap.id)) {
+            seen.add(docSnap.id);
+            const data = docSnap.data();
+            firestorePeople.push({
+              id: docSnap.id,
+              userId,
+              name: data.name || '',
+              createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now()
+            });
+          }
         });
         setLocalPeople(userId, firestorePeople);
-        onUpdate(firestorePeople);
-      },
-      (error) => {
-        console.warn('Firestore people subscription notice:', error);
-        onUpdate(getLocalPeople(userId));
+        notifyPeopleListeners(userId, firestorePeople);
       }
-    );
-
-    return unsubscribe;
-  } catch (err) {
-    console.warn('Firestore error, using local storage for people:', err);
-    return () => {};
-  }
-}
-
-function sanitizeForFirestore<T extends Record<string, any>>(data: T): Record<string, any> {
-  const sanitized: Record<string, any> = {};
-  for (const [key, value] of Object.entries(data)) {
-    if (value !== undefined) {
-      sanitized[key] = value;
-    } else {
-      sanitized[key] = '';
+    } catch (error) {
+      console.warn('Firestore people fetch notice:', error);
     }
-  }
-  return sanitized;
+  })();
+
+  return () => {
+    peopleListeners.get(userId)?.delete(onUpdate);
+  };
 }
 
 export interface SaveMemoryResult {
@@ -284,7 +379,10 @@ export interface DeleteMemoryResult {
 }
 
 /**
- * Adds a new memory with validation and Firestore sync.
+ * Adds a new memory with minimal stored data:
+ * - Only required schema fields stored in 'users/{userId}/memories/{id}'.
+ * - No duplicate copies for Favorites, Mood, Anniversaries, Timeline, or counts.
+ * - Optimistic local update with zero Firestore read overhead.
  */
 export async function addMemory(
   userId: string,
@@ -299,29 +397,46 @@ export async function addMemory(
 
   const newId = `mem_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const newMemory: MemoryItem = {
-    ...memoryData,
-    title: memoryData.title.trim(),
-    notes: memoryData.notes ? memoryData.notes.trim() : '',
-    memoryTime: memoryData.memoryTime || '',
     id: newId,
     userId,
+    title: memoryData.title.trim(),
+    notes: memoryData.notes ? memoryData.notes.trim() : '',
+    memoryDate: memoryData.memoryDate,
+    memoryTime: memoryData.memoryTime || '',
+    mood: memoryData.mood || '🥰',
+    people: memoryData.people || [],
+    isPrivate: Boolean(memoryData.isPrivate),
+    isPinned: Boolean(memoryData.isPinned),
+    isFavorite: Boolean(memoryData.isFavorite),
     createdAt: Date.now()
   };
 
-  // Immediate local update for instant responsiveness
+  // Immediate local update
   const current = getLocalMemories(userId);
-  const updated = [newMemory, ...current.filter((m) => m.id !== newId)];
+  const updated = deduplicateMemories([newMemory, ...current.filter((m) => m.id !== newId)]);
   setLocalMemories(userId, updated);
+  notifyMemoryListeners(userId, updated);
 
   let firestoreSynced = false;
   let firestoreNote: string | undefined;
 
-  // Attempt Firestore sync
-  if (db) {
+  // Single targeted document write to Firestore
+  if (db && userId !== 'guest_user') {
     try {
-      const payload = sanitizeForFirestore(newMemory);
+      const payload = {
+        title: newMemory.title,
+        notes: newMemory.notes,
+        memoryDate: newMemory.memoryDate,
+        memoryTime: newMemory.memoryTime,
+        mood: newMemory.mood,
+        people: newMemory.people,
+        isPrivate: newMemory.isPrivate,
+        isPinned: newMemory.isPinned,
+        isFavorite: newMemory.isFavorite,
+        createdAt: newMemory.createdAt
+      };
       const firestoreDoc = doc(db, 'users', userId, 'memories', newId);
-      
+
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Firestore operation timed out')), 4000)
       );
@@ -340,7 +455,14 @@ export async function addMemory(
 }
 
 /**
- * Updates an existing memory with validation and Firestore sync.
+ * TARGETED MEMORY UPDATES TO MINIMIZE FIRESTORE WRITES:
+ * - Like -> updates ONLY isFavorite.
+ * - Pin -> updates ONLY isPinned.
+ * - Private -> updates ONLY isPrivate.
+ * - Edit -> computes targeted diff and updates ONLY fields that actually changed.
+ * - If no fields changed, skips Firestore write completely (0 writes).
+ * - Replaces memory in local state by ID; never duplicates or appends.
+ * - Consumes 0 Firestore reads.
  */
 export async function updateMemory(
   userId: string,
@@ -361,30 +483,59 @@ export async function updateMemory(
     memoryTime: updates.memoryTime !== undefined ? updates.memoryTime : existing.memoryTime
   };
 
-  const seen = new Set<string>();
-  const updatedList: MemoryItem[] = [];
-  for (const m of current) {
-    const item = m.id === memoryId ? updatedMemory : m;
-    if (!seen.has(item.id)) {
-      seen.add(item.id);
-      updatedList.push(item);
+  // In-place replacement by ID
+  const updatedList = deduplicateMemories(
+    current.map((m) => (m.id === memoryId ? updatedMemory : m))
+  );
+  setLocalMemories(userId, updatedList);
+  notifyMemoryListeners(userId, updatedList);
+
+  // Compute targeted diff for Firestore: only send changed fields
+  const diffPayload: Record<string, any> = {};
+  for (const [key, value] of Object.entries(updates)) {
+    if (value === undefined) continue;
+
+    const existingVal = (existing as any)[key];
+    if (Array.isArray(value)) {
+      const existingArray = Array.isArray(existingVal) ? existingVal : [];
+      const isSame =
+        existingArray.length === value.length &&
+        existingArray.every((v: any, i: number) => v === value[i]);
+      if (!isSame) {
+        diffPayload[key] = value;
+      }
+    } else if (key === 'title' && typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed !== existingVal) {
+        diffPayload.title = trimmed;
+      }
+    } else if (key === 'notes' && typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed !== existingVal) {
+        diffPayload.notes = trimmed;
+      }
+    } else if (existingVal !== value) {
+      diffPayload[key] = value;
     }
   }
-  setLocalMemories(userId, updatedList);
+
+  // If no fields actually changed, save 100% of write quota
+  if (Object.keys(diffPayload).length === 0) {
+    return { memory: updatedMemory, firestoreSynced: true, firestoreNote: 'No changed fields.' };
+  }
 
   let firestoreSynced = false;
   let firestoreNote: string | undefined;
 
-  if (db) {
+  if (db && userId !== 'guest_user') {
     try {
-      const payload = sanitizeForFirestore(updates);
       const firestoreDoc = doc(db, 'users', userId, 'memories', memoryId);
-
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Firestore operation timed out')), 4000)
       );
 
-      await Promise.race([updateDoc(firestoreDoc, payload), timeoutPromise]);
+      // Targeted single-field or changed-fields-only write
+      await Promise.race([updateDoc(firestoreDoc, diffPayload), timeoutPromise]);
       firestoreSynced = true;
     } catch (err: any) {
       console.warn('Firestore updateMemory notice:', err);
@@ -398,17 +549,21 @@ export async function updateMemory(
 }
 
 /**
- * Deletes a memory from local cache and Firestore.
+ * Deletes memory document from local state and Firestore.
+ * - Removes memory by ID from local collection.
+ * - Single targeted deleteDoc call.
+ * - Consumes 0 Firestore reads.
  */
 export async function deleteMemory(userId: string, memoryId: string): Promise<DeleteMemoryResult> {
   const current = getLocalMemories(userId);
-  const updated = current.filter((m) => m.id !== memoryId);
+  const updated = deduplicateMemories(current.filter((m) => m.id !== memoryId));
   setLocalMemories(userId, updated);
+  notifyMemoryListeners(userId, updated);
 
   let firestoreSynced = false;
   let firestoreNote: string | undefined;
 
-  if (db) {
+  if (db && userId !== 'guest_user') {
     try {
       const firestoreDoc = doc(db, 'users', userId, 'memories', memoryId);
       const timeoutPromise = new Promise((_, reject) =>
@@ -429,7 +584,10 @@ export async function deleteMemory(userId: string, memoryId: string): Promise<De
 }
 
 /**
- * Adds a new person to the reusable people list.
+ * Adds a new person to the reusable people list:
+ * - Checks if person already exists (case-insensitive) to prevent duplicate records and writes.
+ * - Stores minimal schema in 'users/{userId}/people/{id}'.
+ * - Consumes 0 Firestore reads.
  */
 export async function addPerson(userId: string, name: string): Promise<PersonItem> {
   const trimmed = name.trim();
@@ -446,10 +604,14 @@ export async function addPerson(userId: string, name: string): Promise<PersonIte
 
   const updated = [...current, newPerson].sort((a, b) => a.name.localeCompare(b.name));
   setLocalPeople(userId, updated);
+  notifyPeopleListeners(userId, updated);
 
-  if (db) {
+  if (db && userId !== 'guest_user') {
     try {
-      const payload = sanitizeForFirestore(newPerson);
+      const payload = {
+        name: newPerson.name,
+        createdAt: newPerson.createdAt
+      };
       await setDoc(doc(db, 'users', userId, 'people', newPerson.id), payload);
     } catch (err) {
       console.warn('Firestore addPerson queued locally:', err);
@@ -458,4 +620,5 @@ export async function addPerson(userId: string, name: string): Promise<PersonIte
 
   return newPerson;
 }
+
 

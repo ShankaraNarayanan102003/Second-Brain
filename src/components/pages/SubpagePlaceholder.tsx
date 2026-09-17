@@ -207,12 +207,11 @@ export function SubpagePlaceholder({
 
             {/* Inset Tactile Input */}
             <input
-              id="foundation-sample-input"
+              id="foundation-input"
               type="text"
               placeholder={`Search or quick capture for ${page.label}...`}
               className="neu-input"
               readOnly
-              value={`Search ${page.label}`}
             />
 
             {/* Tactile Action Button */}
