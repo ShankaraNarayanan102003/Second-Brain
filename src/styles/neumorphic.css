@@ -418,7 +418,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 1rem 1.5rem;
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+  padding-bottom: 1rem;
+  padding-left: max(1.5rem, calc(1rem + env(safe-area-inset-left, 0px)));
+  padding-right: max(1.5rem, calc(1rem + env(safe-area-inset-right, 0px)));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -426,6 +429,7 @@ body {
   -webkit-backdrop-filter: blur(12px);
   background-color: rgba(var(--surface-base), 0.85);
   border-bottom: 1px solid var(--border-subtle);
+  transition: padding var(--neu-transition);
 }
 
 /* Content Container */
@@ -482,6 +486,14 @@ body {
   }
 
   .app-header {
-    padding: 0.875rem 1rem;
+    /* Lower header to safely clear iPhone 17 Dynamic Island and camera cutout */
+    padding-top: max(calc(0.875rem + env(safe-area-inset-top, 0px)), 3.25rem);
+    padding-bottom: 0.875rem;
+    padding-left: max(1rem, calc(0.75rem + env(safe-area-inset-left, 0px)));
+    padding-right: max(1rem, calc(0.75rem + env(safe-area-inset-right, 0px)));
+  }
+
+  #mobile-menu-toggle-btn {
+    display: flex !important;
   }
 }

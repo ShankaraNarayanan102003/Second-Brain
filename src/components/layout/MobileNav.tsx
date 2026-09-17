@@ -404,7 +404,7 @@ export function MobileNav({
               backgroundColor: 'var(--surface-base)',
               borderLeft: '1px solid var(--border-gold-subtle)',
               boxShadow: '-10px 0 30px rgba(0, 0, 0, 0.8)',
-              padding: '1.5rem 1.25rem',
+              padding: 'max(calc(1.5rem + env(safe-area-inset-top, 0px)), 2.5rem) 1.25rem 1.5rem 1.25rem',
               display: 'flex',
               flexDirection: 'column',
               gap: '1rem',
