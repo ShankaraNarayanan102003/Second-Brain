@@ -352,14 +352,7 @@ export function ReminiscePage() {
   return (
     <div
       id="reminisce-page-container"
-      style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '1.5rem 1rem 6rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.75rem'
-      }}
+      className="reminisce-page-wrapper"
     >
       {/* Toast Notification Banner */}
       {toast && (
@@ -419,9 +412,8 @@ export function ReminiscePage() {
       {/* 1. Reminisce Sanctuary Header */}
       <header
         id="reminisce-header"
-        className="neu-card"
+        className="neu-card reminisce-section-card"
         style={{
-          padding: '1.75rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -531,7 +523,7 @@ export function ReminiscePage() {
       {/* TAB 1: ALL MEMORIES */}
       {/* ======================================================== */}
       {activeTab === 'all' && (
-        <section className="neu-card" style={{ padding: '1.75rem' }}>
+        <section className="neu-card reminisce-section-card">
           {/* Header & Date Filters Bar */}
           <div
             style={{
@@ -681,13 +673,7 @@ export function ReminiscePage() {
               )}
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '1.5rem'
-              }}
-            >
+            <div className="reminisce-cards-grid">
               {allTabMemories.map((memory) => (
                 <MemoryCard
                   key={memory.id}
@@ -707,7 +693,7 @@ export function ReminiscePage() {
       {/* TAB 2: FAVORITES */}
       {/* ======================================================== */}
       {activeTab === 'favorites' && (
-        <section className="neu-card" style={{ padding: '1.75rem' }}>
+        <section className="neu-card reminisce-section-card">
           <div
             style={{
               display: 'flex',
@@ -789,13 +775,7 @@ export function ReminiscePage() {
               </p>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '1.5rem'
-              }}
-            >
+            <div className="reminisce-cards-grid">
               {favoritesTabMemories.map((memory) => (
                 <MemoryCard
                   key={memory.id}
@@ -815,7 +795,7 @@ export function ReminiscePage() {
       {/* TAB 3: ANNIVERSARIES */}
       {/* ======================================================== */}
       {activeTab === 'anniversaries' && (
-        <section className="neu-card" style={{ padding: '1.75rem' }}>
+        <section className="neu-card reminisce-section-card">
           <div style={{ marginBottom: '1.5rem' }}>
             <div
               style={{
@@ -870,13 +850,7 @@ export function ReminiscePage() {
               </p>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '1.5rem'
-              }}
-            >
+            <div className="reminisce-cards-grid">
               {anniversariesTabMemories.map((memory) => (
                 <MemoryCard
                   key={memory.id}
@@ -896,7 +870,7 @@ export function ReminiscePage() {
       {/* TAB 4: TIMELINE */}
       {/* ======================================================== */}
       {activeTab === 'timeline' && (
-        <section className="neu-card" style={{ padding: '1.75rem' }}>
+        <section className="neu-card reminisce-section-card">
           <div
             style={{
               display: 'flex',
@@ -1052,13 +1026,7 @@ export function ReminiscePage() {
               )}
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '1.5rem'
-              }}
-            >
+            <div className="reminisce-cards-grid">
               {timelineTabMemories.map((memory) => (
                 <MemoryCard
                   key={memory.id}
@@ -1078,7 +1046,7 @@ export function ReminiscePage() {
       {/* TAB 5: MOOD (EMOJI ONLY, APPLE IOS STYLE, NO COUNTS) */}
       {/* ======================================================== */}
       {activeTab === 'mood' && (
-        <section className="neu-card" style={{ padding: '1.75rem' }}>
+        <section className="neu-card reminisce-section-card">
           <div
             style={{
               display: 'flex',
@@ -1213,13 +1181,7 @@ export function ReminiscePage() {
               </button>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '1.5rem'
-              }}
-            >
+            <div className="reminisce-cards-grid">
               {moodTabMemories.map((memory) => (
                 <MemoryCard
                   key={memory.id}
@@ -1239,7 +1201,7 @@ export function ReminiscePage() {
       {/* TAB 6: PEOPLE (NAMES ONLY, NO COUNTS) */}
       {/* ======================================================== */}
       {activeTab === 'people' && (
-        <section className="neu-card" style={{ padding: '1.75rem' }}>
+        <section className="neu-card reminisce-section-card">
           <div
             style={{
               display: 'flex',
@@ -1434,13 +1396,7 @@ export function ReminiscePage() {
               </button>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '1.5rem'
-              }}
-            >
+            <div className="reminisce-cards-grid">
               {peopleTabMemories.map((memory) => (
                 <MemoryCard
                   key={memory.id}

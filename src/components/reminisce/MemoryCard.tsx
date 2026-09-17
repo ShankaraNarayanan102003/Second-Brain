@@ -41,16 +41,11 @@ export function MemoryCard({
   return (
     <article
       id={`memory-card-${memory.id}`}
-      className="neu-card"
+      className="neu-card reminisce-memory-article"
       style={{
-        padding: '1.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
         border: memory.isPinned
           ? '1.5px solid var(--border-gold-strong)'
-          : 'var(--surface-card-border)',
-        position: 'relative'
+          : 'var(--surface-card-border)'
       }}
     >
       {/* Top Meta Bar: Badges, Mood, and Quick Actions */}
@@ -59,17 +54,28 @@ export function MemoryCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '0.75rem',
-          flexWrap: 'wrap'
+          gap: '0.5rem',
+          flexWrap: 'wrap',
+          width: '100%'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            flexWrap: 'wrap',
+            flex: '1 1 auto',
+            minWidth: 0
+          }}
+        >
           {/* Mood Emoji */}
           <div
             className="neu-inset"
             style={{
               width: '38px',
               height: '38px',
+              flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -85,7 +91,7 @@ export function MemoryCard({
           </div>
 
           {/* Date & Time */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0 }}>
             <div
               style={{
                 display: 'flex',
@@ -93,7 +99,8 @@ export function MemoryCard({
                 gap: '0.35rem',
                 fontSize: '0.8125rem',
                 fontWeight: 600,
-                color: 'var(--text-primary)'
+                color: 'var(--text-primary)',
+                whiteSpace: 'nowrap'
               }}
             >
               <Calendar size={13} color="var(--gold-primary)" />
@@ -107,7 +114,8 @@ export function MemoryCard({
                   alignItems: 'center',
                   gap: '0.35rem',
                   fontSize: '0.75rem',
-                  color: 'var(--text-muted)'
+                  color: 'var(--text-muted)',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 <Clock size={12} />
@@ -129,7 +137,8 @@ export function MemoryCard({
                 fontSize: '0.6875rem',
                 fontWeight: 700,
                 color: 'var(--text-gold)',
-                letterSpacing: '0.04em'
+                letterSpacing: '0.04em',
+                flexShrink: 0
               }}
             >
               <Pin size={11} /> PINNED
@@ -149,7 +158,8 @@ export function MemoryCard({
                 fontSize: '0.6875rem',
                 fontWeight: 600,
                 color: 'var(--text-muted)',
-                letterSpacing: '0.04em'
+                letterSpacing: '0.04em',
+                flexShrink: 0
               }}
             >
               <Lock size={11} /> PRIVATE
@@ -158,7 +168,15 @@ export function MemoryCard({
         </div>
 
         {/* Right Actions: Favorite & Edit Icon Entry Point */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            flexShrink: 0,
+            marginLeft: 'auto'
+          }}
+        >
           {/* Favorite Button */}
           <button
             id={`memory-fav-btn-${memory.id}`}
@@ -285,11 +303,11 @@ export function MemoryCard({
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', minWidth: 0 }}>
           {/* Full Title (Never truncated with ellipses; wraps naturally across lines) */}
           <h3
             style={{
-              fontSize: '1.1875rem',
+              fontSize: '1.125rem',
               fontWeight: 700,
               color: 'var(--text-primary)',
               lineHeight: 1.45,
@@ -348,7 +366,9 @@ export function MemoryCard({
             gap: '0.5rem',
             flexWrap: 'wrap',
             paddingTop: '0.5rem',
-            borderTop: '1px solid var(--border-subtle)'
+            borderTop: '1px solid var(--border-subtle)',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           <span
