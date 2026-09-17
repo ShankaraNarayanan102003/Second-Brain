@@ -1,0 +1,199 @@
+/* ==========================================================================
+   SECOND BRAIN DESIGN TOKEN SYSTEM: EGYPTIAN LIQUID GOLD & NEUMORPHISM
+   ========================================================================== */
+
+:root {
+  /* Egyptian Pharaonic Liquid Gold Spectrum */
+  --gold-sheen-light: #FFF4C2;
+  --gold-highlight: #F7E188;
+  --gold-primary: #D4AF37;
+  --gold-metallic-mid: #B8860B;
+  --gold-deep-liquid: #8C6212;
+  --gold-dark-carat: #5A3F08;
+  
+  /* Tactile Liquid Gold Surface Gradient (Multi-Stop Metallic Specular Sheen) */
+  --liquid-gold-gradient: linear-gradient(
+    135deg, 
+    #FFF8D6 0%, 
+    #F6E08B 16%, 
+    #E8C24D 32%, 
+    #D4AF37 48%, 
+    #9A7218 72%, 
+    #CE9F31 88%, 
+    #F7DC82 100%
+  );
+  --liquid-gold-gradient-hover: linear-gradient(
+    135deg, 
+    #FFFBDE 0%, 
+    #FAE8A0 16%, 
+    #EECB59 32%, 
+    #DEB840 48%, 
+    #A87E1D 72%, 
+    #DDB03D 88%, 
+    #FCE395 100%
+  );
+  --liquid-gold-gradient-active: linear-gradient(
+    135deg, 
+    #E8C355 0%, 
+    #D8A932 24%, 
+    #B5871D 50%, 
+    #7E560B 76%, 
+    #BD9026 100%
+  );
+  --liquid-gold-text: #12151B;
+  --liquid-gold-border: rgba(255, 255, 255, 0.55);
+
+  /* Font Families */
+  --font-display: 'Cinzel', serif, system-ui;
+  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Universal Transitions */
+  --neu-transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --radius-pill: 9999px;
+}
+
+/* --------------------------------------------------------------------------
+   DARK MODE — Obsidian Luxury & Egyptian Gold (STYLE A - PERMANENT)
+   Preserved exactly as working without changes to colors, text, or shadows.
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  --bg-app: #0B0D10;
+  --surface-base: #111419;
+  --surface-card: #13171E;
+  --surface-raised: #181D26;
+  --surface-control: #12151B;
+  
+  --text-primary: #EDEFEF;
+  --text-secondary: #9DA6B2;
+  --text-muted: #5C6573;
+  --text-gold: #F7E188;
+
+  /* Liquid Gold Heading Gradient (Dark Mode - high contrast on obsidian) */
+  --liquid-gold-text-gradient: linear-gradient(
+    135deg, 
+    #FFF4C2 0%, 
+    #E5BE53 35%, 
+    #9C6B1B 70%, 
+    #F5D061 100%
+  );
+
+  /* Tactile Shadows (Top-Left Highlight, Bottom-Right Dark Shadow) */
+  --neu-flat: #13171E;
+  --neu-shadow-raised-sm: 
+    -3px -3px 7px rgba(38, 44, 58, 0.4), 
+     4px 4px 9px rgba(0, 0, 0, 0.85);
+  --neu-shadow-raised-md: 
+    -6px -6px 14px rgba(38, 44, 58, 0.42), 
+     8px 8px 18px rgba(0, 0, 0, 0.9);
+  --neu-shadow-raised-lg: 
+    -10px -10px 24px rgba(38, 44, 58, 0.45), 
+     14px 14px 28px rgba(0, 0, 0, 0.95);
+
+  --neu-shadow-recessed-sm: 
+    inset 2px 2px 5px rgba(0, 0, 0, 0.9), 
+    inset -2px -2px 5px rgba(38, 44, 58, 0.35);
+  --neu-shadow-recessed-md: 
+    inset 4px 4px 9px rgba(0, 0, 0, 0.92), 
+    inset -3px -3px 8px rgba(38, 44, 58, 0.38);
+
+  --gold-glow: 0 0 18px rgba(212, 175, 55, 0.28);
+  --gold-glow-intense: 0 0 25px rgba(247, 225, 136, 0.45);
+  --liquid-gold-shadow: 
+    -3px -3px 8px rgba(255, 244, 194, 0.2), 
+     4px 5px 12px rgba(0, 0, 0, 0.75), 
+     0 0 16px rgba(212, 175, 55, 0.35);
+  --liquid-gold-shadow-hover: 
+    -4px -4px 12px rgba(255, 244, 194, 0.3), 
+     6px 7px 18px rgba(0, 0, 0, 0.88), 
+     0 0 24px rgba(247, 225, 136, 0.55);
+  --liquid-gold-shadow-active: 
+    inset 2px 2px 6px rgba(0, 0, 0, 0.65), 
+    inset -1px -1px 4px rgba(255, 255, 255, 0.35), 
+    0 2px 6px rgba(0, 0, 0, 0.5);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-gold-subtle: rgba(212, 175, 55, 0.25);
+  --border-gold-strong: rgba(247, 225, 136, 0.55);
+
+  /* Style A permanent surface tokens */
+  --surface-accent-gradient: linear-gradient(145deg, #1B1811 0%, #282213 40%, #151209 100%);
+  --surface-card-border: 1px solid rgba(212, 175, 55, 0.3);
+  --active-tab-bg: linear-gradient(135deg, #3A2E12 0%, #1A1508 100%);
+  --active-tab-border: rgba(247, 225, 136, 0.6);
+  --gold-ambient-fill: rgba(212, 175, 55, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   LIGHT MODE — Alabaster Ivory & Rich Liquid Gold (STYLE A - PERMANENT)
+   Fixed contrast: rich Egyptian burnished antique gold text for crystal readability
+   -------------------------------------------------------------------------- */
+[data-theme="light"] {
+  --bg-app: #EAECEF;
+  --surface-base: #EAECEF;
+  --surface-card: #E5E8ED;
+  --surface-raised: #EEF1F5;
+  --surface-control: #E6E9EE;
+
+  --text-primary: #12151B;
+  --text-secondary: #3D4452;
+  --text-muted: #646E7E;
+
+  /* Rich Egyptian Burnished Gold: WCAG AA/AAA compliant (contrast ratio > 7:1) */
+  --text-gold: #6D4704;
+
+  /* Metallic Burnished Gold Text Gradient for Headings (high contrast across entire span) */
+  --liquid-gold-text-gradient: linear-gradient(
+    135deg, 
+    #5C3A00 0%, 
+    #835606 30%, 
+    #5E3C00 65%, 
+    #8E5D08 100%
+  );
+
+  /* Neumorphic Shadows for Light Background */
+  --neu-flat: #E5E8ED;
+  --neu-shadow-raised-sm: 
+    -3px -3px 7px rgba(255, 255, 255, 0.9), 
+     3px 3px 8px rgba(166, 175, 190, 0.55);
+  --neu-shadow-raised-md: 
+    -6px -6px 14px rgba(255, 255, 255, 0.95), 
+     6px 6px 16px rgba(160, 170, 186, 0.65);
+  --neu-shadow-raised-lg: 
+    -10px -10px 22px rgba(255, 255, 255, 1), 
+     10px 10px 24px rgba(150, 160, 178, 0.7);
+
+  --neu-shadow-recessed-sm: 
+    inset 2px 2px 5px rgba(160, 170, 186, 0.6), 
+    inset -2px -2px 5px rgba(255, 255, 255, 0.95);
+  --neu-shadow-recessed-md: 
+    inset 4px 4px 9px rgba(150, 160, 178, 0.7), 
+    inset -4px -4px 9px rgba(255, 255, 255, 1);
+
+  --gold-glow: 0 0 16px rgba(184, 134, 11, 0.22);
+  --gold-glow-intense: 0 0 22px rgba(184, 134, 11, 0.38);
+  --liquid-gold-shadow: 
+    -3px -3px 8px rgba(255, 255, 255, 0.9), 
+     4px 5px 12px rgba(160, 140, 100, 0.45), 
+     0 0 14px rgba(184, 134, 11, 0.3);
+  --liquid-gold-shadow-hover: 
+    -4px -4px 12px rgba(255, 255, 255, 1), 
+     6px 7px 16px rgba(160, 140, 100, 0.55), 
+     0 0 22px rgba(184, 134, 11, 0.45);
+  --liquid-gold-shadow-active: 
+    inset 2px 2px 6px rgba(120, 90, 30, 0.6), 
+    inset -1px -1px 4px rgba(255, 255, 255, 0.8), 
+    0 2px 6px rgba(160, 140, 100, 0.4);
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-gold-subtle: rgba(184, 134, 11, 0.35);
+  --border-gold-strong: rgba(184, 134, 11, 0.75);
+
+  /* Style A permanent surface tokens */
+  --surface-accent-gradient: linear-gradient(145deg, #FFF8E6 0%, #F8E8BA 60%, #EED58F 100%);
+  --surface-card-border: 1px solid rgba(184, 134, 11, 0.35);
+  --active-tab-bg: linear-gradient(135deg, #FFF9EB 0%, #F5E5BA 100%);
+  --active-tab-border: rgba(184, 134, 11, 0.6);
+  --gold-ambient-fill: rgba(212, 175, 55, 0.12);
+}

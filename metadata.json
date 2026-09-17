@@ -1,0 +1,6 @@
+{
+  "name": "SECOND BRAIN",
+  "description": "A personal productivity and knowledge management web application for organizing life, memories, notes, quotes, habits, finances, and tasks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

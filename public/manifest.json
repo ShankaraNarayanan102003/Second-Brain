@@ -1,0 +1,19 @@
+{
+  "short_name": "SecondBrain",
+  "name": "SECOND BRAIN",
+  "description": "Personal productivity and knowledge management web application",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0D0E11",
+  "theme_color": "#0D0E11",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"]
+}

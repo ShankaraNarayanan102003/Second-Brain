@@ -1,0 +1,487 @@
+/* ==========================================================================
+   NEUMORPHIC TACTILE & RESPONSIVE COMPONENT STYLES
+   ========================================================================== */
+
+/* Base Reset and Layout */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Display Font Class for Egyptian Titles */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+/* Liquid Gold Gradient Text */
+.gold-gradient-text {
+  background: var(--liquid-gold-text-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  font-weight: 700;
+}
+
+/* Neumorphic Raised Card */
+.neu-card {
+  background-color: var(--surface-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--neu-shadow-raised-md);
+  border: var(--surface-card-border);
+  transition: var(--neu-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Neumorphic Recessed / Inset Well */
+.neu-inset {
+  background-color: var(--surface-control);
+  border-radius: var(--radius-md);
+  box-shadow: var(--neu-shadow-recessed-md);
+  border: 1px solid var(--border-subtle);
+  transition: var(--neu-transition);
+}
+
+/* ==========================================================================
+   PRIMARY BUTTON: LIQUID GOLD (GLOBAL DEFAULT FOR INTERACTIVE PRIMARY ACTIONS)
+   ========================================================================== */
+.neu-btn-primary,
+.neu-btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  background: var(--liquid-gold-gradient);
+  color: var(--liquid-gold-text) !important;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  border: 1px solid var(--liquid-gold-border);
+  box-shadow: var(--liquid-gold-shadow);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.18s ease,
+              background 0.18s ease,
+              filter 0.18s ease;
+}
+
+/* Subtle Specular Highlight Sheen on Liquid Gold */
+.neu-btn-primary::before,
+.neu-btn-gold::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48%;
+  background: linear-gradient(
+    180deg, 
+    rgba(255, 255, 255, 0.45) 0%, 
+    rgba(255, 255, 255, 0.1) 80%, 
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  pointer-events: none;
+}
+
+/* Hover State: Smooth lift, richer sheen & golden ambiance */
+.neu-btn-primary:hover,
+.neu-btn-gold:hover {
+  background: var(--liquid-gold-gradient-hover);
+  box-shadow: var(--liquid-gold-shadow-hover);
+  transform: translateY(-2px);
+  filter: brightness(1.03);
+  color: var(--liquid-gold-text) !important;
+}
+
+/* Focus State: High-contrast gold focus ring */
+.neu-btn-primary:focus-visible,
+.neu-btn-gold:focus-visible {
+  box-shadow: var(--liquid-gold-shadow-hover), 0 0 0 3px rgba(247, 225, 136, 0.6);
+}
+
+/* Pressed / Active State: Realistic 3D Tactile Depression */
+.neu-btn-primary:active,
+.neu-btn-gold:active,
+.neu-btn-primary.active,
+.neu-btn-gold.active {
+  background: var(--liquid-gold-gradient-active);
+  box-shadow: var(--liquid-gold-shadow-active);
+  transform: translateY(2px) scale(0.985);
+  color: var(--liquid-gold-text) !important;
+}
+
+/* Disabled State */
+.neu-btn-primary:disabled,
+.neu-btn-gold:disabled,
+.neu-btn-primary[aria-disabled="true"],
+.neu-btn-gold[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: grayscale(30%);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   SECONDARY & SUBTLE CONTROLS (CANCEL, CLOSE, BACK, SECONDARY ACTIONS)
+   ========================================================================== */
+.neu-btn-secondary,
+.neu-btn-subtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-control);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--neu-shadow-raised-sm);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: var(--neu-transition);
+  user-select: none;
+}
+
+.neu-btn-secondary:hover,
+.neu-btn-subtle:hover {
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  border-color: var(--border-gold-subtle);
+  box-shadow: var(--neu-shadow-raised-md);
+  transform: translateY(-1px);
+}
+
+.neu-btn-secondary:active,
+.neu-btn-subtle:active {
+  background-color: var(--surface-control);
+  box-shadow: var(--neu-shadow-recessed-sm);
+  transform: translateY(1px);
+}
+
+/* ==========================================================================
+   DESTRUCTIVE BUTTON (DELETE, REMOVE ACTIONS)
+   ========================================================================== */
+.neu-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  box-shadow: var(--neu-shadow-raised-sm);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: var(--neu-transition);
+  user-select: none;
+}
+
+.neu-btn-danger:hover {
+  background-color: rgba(239, 68, 68, 0.22);
+  border-color: #EF4444;
+  color: #F87171;
+  box-shadow: var(--neu-shadow-raised-md), 0 0 12px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+.neu-btn-danger:active {
+  box-shadow: var(--neu-shadow-recessed-sm);
+  transform: translateY(1px);
+}
+
+/* Outline button */
+.neu-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-gold);
+  border: 1.5px solid var(--border-gold-subtle);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: var(--neu-transition);
+  user-select: none;
+}
+
+.neu-btn-outline:hover {
+  background: var(--surface-raised);
+  border-color: var(--border-gold-strong);
+  box-shadow: var(--neu-shadow-raised-sm);
+}
+
+.neu-btn-outline:active {
+  box-shadow: var(--neu-shadow-recessed-sm);
+  transform: translateY(1px);
+}
+
+/* Tactile Raised Neutral Button (Legacy / Generic) */
+.neu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--neu-shadow-raised-sm);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: var(--neu-transition);
+  user-select: none;
+}
+
+.neu-btn:hover {
+  box-shadow: var(--neu-shadow-raised-md);
+  color: var(--text-gold);
+  border-color: var(--border-gold-subtle);
+}
+
+.neu-btn:active, .neu-btn.active {
+  box-shadow: var(--neu-shadow-recessed-sm);
+  background-color: var(--surface-control);
+  transform: translateY(1px);
+  border-color: var(--border-gold-subtle);
+  color: var(--text-gold);
+}
+
+/* Tactile Icon Button */
+.neu-icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--neu-shadow-raised-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  transition: var(--neu-transition);
+}
+
+.neu-icon-btn:hover {
+  color: var(--text-gold);
+  box-shadow: var(--neu-shadow-raised-md);
+  border-color: var(--border-gold-subtle);
+}
+
+.neu-icon-btn:active, .neu-icon-btn.active {
+  box-shadow: var(--neu-shadow-recessed-sm);
+  background-color: var(--surface-control);
+  color: var(--text-gold);
+  border-color: var(--border-gold-strong);
+}
+
+/* Tactile Inset Input */
+.neu-input {
+  width: 100%;
+  padding: 0.85rem 1.15rem;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-control);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--neu-shadow-recessed-sm);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: var(--neu-transition);
+}
+
+.neu-input:focus {
+  border-color: var(--border-gold-strong);
+  box-shadow: var(--neu-shadow-recessed-md), 0 0 0 2px var(--border-gold-subtle);
+}
+
+.neu-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Neumorphic Navigation Item */
+.neu-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--neu-transition);
+  text-align: left;
+}
+
+.neu-nav-item:hover {
+  color: var(--text-primary);
+  background-color: var(--surface-raised);
+  box-shadow: var(--neu-shadow-raised-sm);
+  border-color: var(--border-subtle);
+}
+
+.neu-nav-item.active {
+  background: var(--active-tab-bg);
+  box-shadow: var(--neu-shadow-recessed-sm);
+  border-color: var(--active-tab-border);
+  color: var(--text-gold);
+  font-weight: 600;
+}
+
+/* Responsive Navigation Shell */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg-app);
+  position: relative;
+}
+
+/* Desktop Sidebar */
+.desktop-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface-base);
+  border-right: 1px solid var(--border-subtle);
+  overflow-y: auto;
+  z-index: 30;
+}
+
+/* Workspace Main View */
+.workspace-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header Bar */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(var(--surface-base), 0.85);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Content Container */
+.content-stage {
+  flex: 1;
+  padding: 1.75rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-nav-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background-color: var(--surface-base);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  align-items: center;
+  justify-content: space-around;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1024px) {
+  .desktop-sidebar {
+    width: 240px;
+    padding: 1.25rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-sidebar {
+    display: none;
+  }
+
+  .mobile-nav-bar {
+    display: flex;
+  }
+
+  /* Profile is relocated to the mobile bottom navigation bar */
+  .header-profile-wrapper {
+    display: none !important;
+  }
+
+  .content-stage {
+    padding: 1.25rem 1rem;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-header {
+    padding: 0.875rem 1rem;
+  }
+}
